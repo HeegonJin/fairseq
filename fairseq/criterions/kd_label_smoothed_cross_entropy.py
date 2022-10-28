@@ -17,6 +17,10 @@ from omegaconf import II
 
 @dataclass
 class KDLabelSmoothedCrossEntropyCriterionConfig(FairseqDataclass):
+    rambda : int = field(
+        default=1000000,
+        metadata={"help": "attn_loss weight"},
+    )
     label_smoothing: float = field(
         default=0.0,
         metadata={"help": "epsilon for label smoothing, 0 means no label smoothing"},
@@ -106,6 +110,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         adaptive_smoothing,
         use_adaptive_kd_rates,
         kd_selection_temp,
+        rambda,
         ignore_prefix_size=0,
         report_accuracy=False,
     ):
@@ -126,6 +131,8 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         self.kd_selection_temp = kd_selection_temp
         self.alpha = alpha if not use_adaptive_weightage else None
         self.beta = 1 if adaptive_smoothing is not None else adaptive_smoothing
+        self.rambda = rambda
+        
         if self.kd_strategy == "global_multi_level":
             self.queue = {}
             for id in self.task.src_lang_ids:
@@ -181,15 +188,17 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         2) the sample size, which is used as the denominator for the gradient
         3) logging outputs to display while training
         """
-        net_output = model(**sample["net_input"])
+        net_output, attn_output = model(**sample["net_input"])
 
         teacher_output = sample.get("teacher_output", None)
-
+        teacher_attn_output = sample.get("teacher_attn_output", None)
         loss, extra = self.compute_loss(
             model, 
             net_output, 
             sample, 
-            teacher_output=teacher_output)
+            teacher_output=teacher_output,
+            attn=attn_output,
+            teacher_attn=teacher_attn_output)
 
         sample_size = (
             sample["target"].size(0) if self.sentence_avg else sample["ntokens"]
@@ -202,7 +211,8 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
             'sample_size': sample_size,
             'kd_loss': extra['kd_loss'].data if extra.get('kd_loss', None) is not None else 0,
             'nll_loss_student': extra['nll_loss_student'].data if extra.get('nll_loss_student', None) is not None else loss.data,
-            'nll_loss_teacher': extra['nll_loss_teacher'].data if extra.get('nll_loss_teacher', None) is not None else 0
+            'nll_loss_teacher': extra['nll_loss_teacher'].data if extra.get('nll_loss_teacher', None) is not None else 0,
+            'attn_loss' : extra['attn_loss'].data if extra.get('attn_loss', None) is not None else 0
         }
         
         if self.report_accuracy:
@@ -222,11 +232,16 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         return lprobs.view(-1, lprobs.size(-1)), target.view(-1)
 
 
-    def compute_loss(self, model, net_output, sample, teacher_output=None):
+    def compute_loss(self, model, net_output, sample, teacher_output=None, attn=None, teacher_attn=None):
         lprobs, target = self.get_lprobs_and_target(model, net_output, sample)
         pad_mask = target.eq(self.padding_idx).view(-1)
         extra = dict()
 
+        # get attn loss
+        attn_loss = 0
+        if attn is not None and teacher_attn is not None:
+            attn_loss = F.mse_loss(attn, teacher_attn, reduction='sum') * self.rambda
+        
         # get student logits
         student_logits = net_output[0]
         student_logits = student_logits.view(-1, student_logits.size(-1))
@@ -364,6 +379,9 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
 
         else:
             raise ValueError("unknown strategy or parameter mismatch")
+        
+        extra['attn_loss'] = attn_loss.sum()
+        loss += attn_loss
         return loss, extra
 
 
@@ -387,10 +405,17 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         sample_size = sum(log.get('sample_size', 0) for log in logging_outputs)
         nll_loss_teacher = sum(log.get('nll_loss_teacher', 0) for log in logging_outputs)
         kd_loss = sum(log.get('kd_loss', 0) for log in logging_outputs)
+        attn_loss = sum(log.get('attn_loss', 0) for log in logging_outputs)
         # log metrics
         metrics.log_scalar(
             'loss', 
             loss / sample_size / math.log(2), 
+            sample_size, 
+            round=3
+        )
+        metrics.log_scalar(
+            'attn_loss', 
+            attn_loss / sample_size / math.log(2), 
             sample_size, 
             round=3
         )

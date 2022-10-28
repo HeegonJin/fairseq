@@ -43,7 +43,8 @@ class FairseqCriterion(_Loss):
                 raise NotImplementedError("{} not supported".format(p.kind))
 
             assert p.kind in {p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY}
-
+            
+            print(p.name)
             if p.name == "task":
                 init_args["task"] = task
             elif p.name == "cfg":

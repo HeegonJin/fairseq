@@ -220,11 +220,13 @@ class TransformerEncoderBase(FairseqEncoder):
             encoder_states.append(x)
 
         # encoder layers
+        attn_list = []
+
         for layer in self.layers:
-            lr = layer(
+            lr, attn_out = layer(
                 x, encoder_padding_mask=encoder_padding_mask if has_pads else None
             )
-
+            attn_list.append(attn_out)
             if isinstance(lr, tuple) and len(lr) == 2:
                 x, fc_result = lr
             else:
@@ -236,6 +238,7 @@ class TransformerEncoderBase(FairseqEncoder):
                 encoder_states.append(x)
                 fc_results.append(fc_result)
 
+        attn_tensor = torch.stack(attn_list, dim=1)
         if self.layer_norm is not None:
             x = self.layer_norm(x)
 
@@ -257,6 +260,7 @@ class TransformerEncoderBase(FairseqEncoder):
             "fc_results": fc_results,  # List[T x B x C]
             "src_tokens": [],
             "src_lengths": [src_lengths],
+            "attn_tensor": attn_tensor
         }
 
     @torch.jit.export

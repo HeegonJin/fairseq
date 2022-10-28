@@ -28,7 +28,9 @@ class KDTranslationConfig(TranslationConfig):
     teacher_checkpoint_path: str = field(
         default="./", metadata={"help": "teacher checkpoint path when performing distillation"}
     )
-
+    rambda: int = field(
+        default="1000000", metadata={"help": "attn_loss weight"}
+    )
 
 @register_task("kd_translation", dataclass=KDTranslationConfig)
 class KDTranslationTask(TranslationTask):
@@ -47,3 +49,4 @@ class KDTranslationTask(TranslationTask):
         super().__init__(cfg, src_dict, tgt_dict)
         self.kd_strategy = cfg.kd_strategy
         self.src_lang_ids = [i for i in range(len(src_dict)) if src_dict[i].startswith("__src__")]
+        self.rambda = cfg.rambda

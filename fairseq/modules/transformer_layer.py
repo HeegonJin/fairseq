@@ -28,7 +28,7 @@ class TransformerEncoderLayerBase(nn.Module):
     *cfg.encoder.normalize_before* to ``True``.
 
     Args:
-        cfg (argparse.Namespace): parsed command-line arguments
+        args (argparse.Namespace): parsed command-line arguments
     """
 
     def __init__(self, cfg, return_fc=False):
@@ -194,14 +194,17 @@ class TransformerEncoderLayerBase(nn.Module):
         residual = x
         if self.normalize_before:
             x = self.self_attn_layer_norm(x)
-        x, _ = self.self_attn(
+
+        x, attn_out = self.self_attn(
             query=x,
             key=x,
             value=x,
             key_padding_mask=encoder_padding_mask,
-            need_weights=False,
+            need_weights=True,
             attn_mask=attn_mask,
+            need_head_weights=True
         )
+        attn_out.unsqueeze(1)
         x = self.dropout_module(x)
         x = self.residual_connection(x, residual)
         if not self.normalize_before:
@@ -223,7 +226,7 @@ class TransformerEncoderLayerBase(nn.Module):
 
         if self.return_fc and not torch.jit.is_scripting():
             return x, fc_result
-        return x
+        return x, attn_out
 
 
 # backward compatible with the legacy argparse format
@@ -359,7 +362,7 @@ class TransformerDecoderLayerBase(nn.Module):
             self_attention=not cfg.cross_self_attention,
             q_noise=self.quant_noise,
             qn_block_size=self.quant_noise_block_size,
-            xformers_att_config=cfg.decoder.xformers_att_config,
+            xformers_att_config=cfg.decoder.xformers_att_config
         )
 
     def build_encoder_attention(self, embed_dim, cfg):
@@ -392,7 +395,7 @@ class TransformerDecoderLayerBase(nn.Module):
         self_attn_mask: Optional[torch.Tensor] = None,
         self_attn_padding_mask: Optional[torch.Tensor] = None,
         need_attn: bool = False,
-        need_head_weights: bool = False,
+        need_head_weights: bool = True,
     ):
         """
         Args:

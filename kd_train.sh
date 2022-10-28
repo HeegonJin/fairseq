@@ -1,10 +1,10 @@
 #!/bin/bash
 export PYTHONPATH="${PYTHONPATH}:/home/intern/fairseq"
 
-data_dir=/home/intern/fairseq/data-bin
+data_dir=/workspace/fairseq/data-bin
 data=wmt14_en_fr
 #wmt17_en_de iwslt14.tokenized.de-en wmt14_en_fr
-custom_model_dir=/home/intern/fairseq/custom
+custom_model_dir=/workspace/fairseq/custom
 teacher_model=transformer
 student_model=transformer
 strategy=global_level
@@ -12,7 +12,7 @@ temperature=1.5
 #generic, global_level, batch_level
 touch $data_dir/$strategy/$student_model/$data/$temperature/train.log
 
-CUDA_VISIBLE_DEVICES=0 fairseq-train $data_dir/$data \
+CUDA_VISIBLE_DEVICES=1 fairseq-train $data_dir/$data \
 --amp \
 --num-workers 2 \
 --log-interval=1000 \

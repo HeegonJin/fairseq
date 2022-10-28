@@ -8,7 +8,7 @@ custom_model_dir=/workspace/fairseq/custom
 student_model=transformer
 touch $data_dir/$student_model/$data/train.log
 
-CUDA_VISIBLE_DEVICES=0 fairseq-train $data_dir/$data \
+CUDA_VISIBLE_DEVICES=1 fairseq-train $data_dir/$data \
 --amp \
 --num-workers 2 \
 --log-interval=1000 \

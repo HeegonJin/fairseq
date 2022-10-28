@@ -1,3 +1,6 @@
+# custom
+*.sh
+
 # JetBrains PyCharm IDE
 .idea/
 

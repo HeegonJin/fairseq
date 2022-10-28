@@ -15,7 +15,7 @@ touch $data_dir/$strategy/$student_model/$data/$temperature/train.log
 CUDA_VISIBLE_DEVICES=0 fairseq-train $data_dir/$data \
 --amp \
 --num-workers 2 \
---log-interval=1 \
+--log-interval=1000 \
 --log-format tqdm \
 --max-source-positions 210 --max-target-positions 210 --max-update 1000000 --max-tokens 8192 \
 --arch $student_model --activation-fn gelu --dropout 0.2 \

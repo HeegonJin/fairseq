@@ -1,10 +1,10 @@
 #!/bin/bash
 export PYTHONPATH="${PYTHONPATH}:/home/intern/fairseq"
 
-data_dir=/home/intern/fairseq/data-bin
+data_dir=/workspace/fairseq/data-bin
 data=wmt14_en_fr
 #wmt17_en_de iwslt14.tokenized.de-en wmt14_en_fr
-custom_model_dir=/home/intern/fairseq/custom
+custom_model_dir=/workspace/fairseq/custom
 student_model=transformer
 touch $data_dir/$student_model/$data/train.log
 

@@ -204,7 +204,6 @@ class TransformerEncoderLayerBase(nn.Module):
             attn_mask=attn_mask,
             need_head_weights=True
         )
-        attn_out.unsqueeze(1)
         x = self.dropout_module(x)
         x = self.residual_connection(x, residual)
         if not self.normalize_before:
@@ -362,7 +361,7 @@ class TransformerDecoderLayerBase(nn.Module):
             self_attention=not cfg.cross_self_attention,
             q_noise=self.quant_noise,
             qn_block_size=self.quant_noise_block_size,
-            xformers_att_config=cfg.decoder.xformers_att_config
+            xformers_att_config=cfg.decoder.xformers_att_config,
         )
 
     def build_encoder_attention(self, embed_dim, cfg):
@@ -495,7 +494,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 incremental_state=incremental_state,
                 static_kv=True,
                 need_weights=need_attn or (not self.training and self.need_attn),
-                need_head_weights=need_head_weights,
+                need_head_weights=True,
             )
             x = self.dropout_module(x)
             x = self.residual_connection(x, residual)

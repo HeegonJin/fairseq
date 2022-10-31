@@ -477,7 +477,7 @@ class MultiheadAttention(FairseqIncrementalDecoder):
         static_kv: bool = False,
         attn_mask: Optional[Tensor] = None,
         before_softmax: bool = False,
-        need_head_weights: bool = False,
+        need_head_weights: bool = True,
     ) -> Tuple[Tensor, Optional[Tensor]]:
         """Input shape: Time x Batch x Channel
 
@@ -558,6 +558,7 @@ class MultiheadAttention(FairseqIncrementalDecoder):
                     q_proj_weight=self.q_proj.weight,
                     k_proj_weight=self.k_proj.weight,
                     v_proj_weight=self.v_proj.weight,
+                    average_attn_weights=False
                 )
 
         if incremental_state is not None:
@@ -779,7 +780,7 @@ class MultiheadAttention(FairseqIncrementalDecoder):
             if not need_head_weights:
                 # average attention weights over heads
                 attn_weights = attn_weights.mean(dim=0)
-
+        # print(attn_weights.shape)
         return attn, attn_weights
 
     @staticmethod

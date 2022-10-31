@@ -50,7 +50,7 @@ class TransformerEncoderBase(FairseqEncoder):
         super().__init__(dictionary)
         self.link = None
         if cfg.link:
-            self.link = nn.Conv2d(2, 6, 1) # need to change
+            self.link = nn.Conv2d(4, 48, 1) # need to change
             print("link enabled")
         self.register_buffer("version", torch.Tensor([3]))
 
@@ -230,6 +230,7 @@ class TransformerEncoderBase(FairseqEncoder):
             lr, attn_out = layer(
                 x, encoder_padding_mask=encoder_padding_mask if has_pads else None
             )
+            # print(attn_out.shape)
             attn_list.append(attn_out)
             if isinstance(lr, tuple) and len(lr) == 2:
                 x, fc_result = lr
@@ -241,8 +242,12 @@ class TransformerEncoderBase(FairseqEncoder):
                 assert encoder_states is not None
                 encoder_states.append(x)
                 fc_results.append(fc_result)
-
-        attn_tensor = torch.stack(attn_list, dim=1)
+        # print(attn_list[0].shape)
+        attn_tensor = torch.stack(attn_list, dim=0)
+        # print(attn_tensor.shape)
+        attn_tensor = attn_tensor.transpose(0, 1)
+        B, L, H , D1, D2 = attn_tensor.shape
+        attn_tensor = torch.reshape(attn_tensor, (B, L * H, D1, D2))
         if self.link:
             attn_tensor = self.link(attn_tensor)
             # print(attn_tensor.shape)

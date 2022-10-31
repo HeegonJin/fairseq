@@ -28,8 +28,8 @@ class KDTranslationConfig(TranslationConfig):
     teacher_checkpoint_path: str = field(
         default="./", metadata={"help": "teacher checkpoint path when performing distillation"}
     )
-    rambda: int = field(
-        default="1000000", metadata={"help": "attn_loss weight"}
+    rambda: float = field(
+        default="1", metadata={"help": "attn_loss weight"}
     )
     link : bool = field(
         default = False, metadata={"help": "attention augmentation module"}

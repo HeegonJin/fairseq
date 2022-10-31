@@ -50,7 +50,8 @@ class TransformerEncoderBase(FairseqEncoder):
         super().__init__(dictionary)
         self.link = None
         if cfg.link:
-            self.link = nn.Conv2d(2, 6, 1)
+            self.link = nn.Conv2d(2, 6, 1) # need to change
+            print("link enabled")
         self.register_buffer("version", torch.Tensor([3]))
 
         self.dropout_module = FairseqDropout(
@@ -244,7 +245,7 @@ class TransformerEncoderBase(FairseqEncoder):
         attn_tensor = torch.stack(attn_list, dim=1)
         if self.link:
             attn_tensor = self.link(attn_tensor)
-            print(attn_tensor.shape)
+            # print(attn_tensor.shape)
         if self.layer_norm is not None:
             
             x = self.layer_norm(x)

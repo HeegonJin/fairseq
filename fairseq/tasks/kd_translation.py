@@ -31,7 +31,9 @@ class KDTranslationConfig(TranslationConfig):
     rambda: int = field(
         default="1000000", metadata={"help": "attn_loss weight"}
     )
-
+    link : bool = field(
+        default = False, metadata={"help": "attention augmentation module"}
+    )
 @register_task("kd_translation", dataclass=KDTranslationConfig)
 class KDTranslationTask(TranslationTask):
     """
@@ -50,3 +52,4 @@ class KDTranslationTask(TranslationTask):
         self.kd_strategy = cfg.kd_strategy
         self.src_lang_ids = [i for i in range(len(src_dict)) if src_dict[i].startswith("__src__")]
         self.rambda = cfg.rambda
+        self.link = cfg.link

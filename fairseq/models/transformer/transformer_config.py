@@ -56,7 +56,6 @@ class EncDecBaseConfig(FairseqDataclass):
         },
     )
 
-
 @dataclass
 class DecoderConfig(EncDecBaseConfig):
     input_dim: int = II("model.decoder.embed_dim")
@@ -248,7 +247,13 @@ class TransformerConfig(FairseqDataclass):
         default=False,
         metadata={"help": "don't add an extra layernorm after the last decoder block"},
     )
-
+    
+    link: bool = field(
+        default=False,
+        metadata={
+            "help": "config for attention augmentation module"
+        }
+    )
     # We need to make this hierarchical dataclass like the flat namespace
     # __getattr__ and __setattr__ here allow backward compatibility
     # for subclasses of Transformer(Legacy) that depend on read/write on

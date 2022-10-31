@@ -48,6 +48,9 @@ class TransformerEncoderBase(FairseqEncoder):
     def __init__(self, cfg, dictionary, embed_tokens, return_fc=False):
         self.cfg = cfg
         super().__init__(dictionary)
+        self.link = None
+        if cfg.link:
+            self.link = nn.Conv2d(2, 6, 1)
         self.register_buffer("version", torch.Tensor([3]))
 
         self.dropout_module = FairseqDropout(
@@ -239,7 +242,11 @@ class TransformerEncoderBase(FairseqEncoder):
                 fc_results.append(fc_result)
 
         attn_tensor = torch.stack(attn_list, dim=1)
+        if self.link:
+            attn_tensor = self.link(attn_tensor)
+            print(attn_tensor.shape)
         if self.layer_norm is not None:
+            
             x = self.layer_norm(x)
 
         # The Pytorch Mobile lite interpreter does not supports returning NamedTuple in

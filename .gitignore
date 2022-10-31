@@ -1,4 +1,4 @@
-# custom
+#custom
 *.sh
 
 # JetBrains PyCharm IDE
@@ -120,6 +120,7 @@ ENV/
 
 # data
 data-bin/
+data-bin-old/
 
 # reranking
 /examples/reranking/rerank_data

@@ -50,7 +50,7 @@ class TransformerEncoderBase(FairseqEncoder):
         super().__init__(dictionary)
         self.link = None
         if cfg.link:
-            self.link = nn.Conv2d(4, 48, 1) # need to change
+            self.link = nn.Conv2d(12, 48, 1) # need to change
             print("link enabled")
         self.register_buffer("version", torch.Tensor([3]))
 

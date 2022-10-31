@@ -1135,12 +1135,13 @@ class Trainer(object):
             sample, is_dummy_batch = self._prepare_sample(sample)
 
             if self.perform_distillation:
-                teacher_output = self.teacher_model(**sample["net_input"])
+                teacher_output, teacher_attn_output = self.teacher_model(**sample["net_input"])
                 sample["teacher_output"] = teacher_output
                 sample["teacher_lprobs"] = self.teacher_model.get_normalized_probs(
                     teacher_output, 
                     log_probs=True
                 )
+                sample["teacher_attn_output"] = teacher_attn_output
 
             try:
                 _loss, sample_size, logging_output = self.task.valid_step(

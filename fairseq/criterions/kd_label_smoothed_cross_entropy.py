@@ -240,7 +240,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         # get attn loss
         attn_loss = 0
         if attn is not None and teacher_attn is not None:
-            attn_loss = F.mse_loss(attn, teacher_attn, reduction='sum') * self.rambda
+            attn_loss = F.mse_loss(attn, teacher_attn, reduction='mean') * self.rambda
         
         # get student logits
         student_logits = net_output[0]

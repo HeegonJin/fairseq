@@ -51,7 +51,7 @@ class TransformerEncoderBase(FairseqEncoder):
         self.link = None
         if cfg.link:
             self.link = nn.Conv2d(12, 48, 1) # need to change
-            self.link.to(torch.float16)
+            # self.link.to(torch.float16)
             print("link enabled")
         self.register_buffer("version", torch.Tensor([3]))
 

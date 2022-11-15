@@ -132,7 +132,6 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         self.alpha = alpha if not use_adaptive_weightage else None
         self.beta = 1 if adaptive_smoothing is not None else adaptive_smoothing
         self.rambda = rambda
-        
         if self.kd_strategy == "global_multi_level":
             self.queue = {}
             for id in self.task.src_lang_ids:
@@ -180,7 +179,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         self.queue[id] = torch.cat((self.queue[id], tensor))
 
 
-    def forward(self, model, sample, reduce=True):
+    def forward(self, model, sample, epoch, reduce=True):
         """Compute the loss for the given sample.
 
         Returns a tuple with three elements:
@@ -195,7 +194,8 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         loss, extra = self.compute_loss(
             model, 
             net_output, 
-            sample, 
+            sample,
+            epoch,
             teacher_output=teacher_output,
             attn=attn_output,
             teacher_attn=teacher_attn_output)
@@ -232,7 +232,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         return lprobs.view(-1, lprobs.size(-1)), target.view(-1)
 
 
-    def compute_loss(self, model, net_output, sample, teacher_output=None, attn=None, teacher_attn=None):
+    def compute_loss(self, model, net_output, sample, epoch, teacher_output=None, attn=None, teacher_attn=None):
         lprobs, target = self.get_lprobs_and_target(model, net_output, sample)
         pad_mask = target.eq(self.padding_idx).view(-1)
         extra = dict()
@@ -240,7 +240,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         # get attn loss
         attn_loss = 0
         if attn is not None and teacher_attn is not None:
-            attn_loss = F.mse_loss(attn, teacher_attn, reduction='mean') * self.rambda
+            attn_loss = F.mse_loss(attn, teacher_attn, reduction='mean') * self.rambda * (0.985 ** (epoch-1))
         
         # get student logits
         student_logits = net_output[0]

@@ -12,6 +12,17 @@ def transformer_tiny_link(args):
     args.decoder_attention_heads = getattr(args, "decoder_attention_heads", 4)
     return base_architecture(args)
 
+@register_model_architecture("transformer", "transformer_tiny_nolink")
+def transformer_tiny_nolink(args):
+    args.link = getattr(args, "link", False)
+    args.encoder_embed_dim = getattr(args, "encoder_embed_dim", 256)
+    args.encoder_ffn_embed_dim = getattr(args, "encoder_ffn_embed_dim", 256)
+    args.encoder_layers = getattr(args, "encoder_layers", 3)
+    args.encoder_attention_heads = getattr(args, "encoder_attention_heads", 4)
+    args.decoder_layers = getattr(args, "decoder_layers", 3)
+    args.decoder_attention_heads = getattr(args, "decoder_attention_heads", 4)
+    return base_architecture(args)
+
 @register_model_architecture("transformer", "transformer_2x")
 def transformer_big(args):
     args.encoder_embed_dim = getattr(args, "encoder_embed_dim", 1024)

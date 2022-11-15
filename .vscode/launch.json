@@ -13,7 +13,7 @@
             "justMyCode": true,
             "args": ["/home/intern/fairseq/data-bin/wmt14_en_fr", "--log-interval=1000", "--log-format=tqdm", "--max-source-positions=210", "--max-target-positions=210",
             "--max-update=1000000",
-            "--max-tokens=8192", "--arch=transformer", "--activation-fn=gelu", "--dropout=0.2", "--task=kd_translation",
+            "--max-tokens=8192", "--arch=transformer_tiny_link", "--activation-fn=gelu", "--dropout=0.2", "--task=kd_translation",
             "--kd-strategy=batch_level", "--alpha=0.5", "--kd-rate=0.5", "--teacher-temp=1.", "--student-temp=1.",
             "--teacher-checkpoint-path=/home/intern/fairseq/data-bin/transformer/wmt14_en_fr/checkpoint_best.pt",
             "--criterion=kd_label_smoothed_cross_entropy", "--label-smoothing=0.1", "--source-lang=en", "--target-lang=fr",

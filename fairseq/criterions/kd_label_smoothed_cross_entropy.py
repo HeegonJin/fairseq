@@ -17,9 +17,13 @@ from omegaconf import II
 
 @dataclass
 class KDLabelSmoothedCrossEntropyCriterionConfig(FairseqDataclass):
-    rambda : int = field(
+    rambda: int = field(
         default=1000000,
         metadata={"help": "attn_loss weight"},
+    )
+    decay: float = field(
+        default=0.985,
+        metadata={"help": "decay value for rambda"}
     )
     label_smoothing: float = field(
         default=0.0,
@@ -111,6 +115,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         use_adaptive_kd_rates,
         kd_selection_temp,
         rambda,
+        decay,
         ignore_prefix_size=0,
         report_accuracy=False,
     ):
@@ -132,6 +137,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         self.alpha = alpha if not use_adaptive_weightage else None
         self.beta = 1 if adaptive_smoothing is not None else adaptive_smoothing
         self.rambda = rambda
+        self.decay = decay
         if self.kd_strategy == "global_multi_level":
             self.queue = {}
             for id in self.task.src_lang_ids:
@@ -240,7 +246,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         # get attn loss
         attn_loss = 0
         if attn is not None and teacher_attn is not None:
-            attn_loss = F.mse_loss(attn, teacher_attn, reduction='mean') * self.rambda * (0.985 ** (epoch-1))
+            attn_loss = F.mse_loss(attn, teacher_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
         
         # get student logits
         student_logits = net_output[0]

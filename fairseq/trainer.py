@@ -838,8 +838,8 @@ class Trainer(object):
                             #     log_probs=True
                             # )
                     if epoch == 2:
-                        torch.nn.utils.prune.l1_unstructured(self.model.encoder.link, 'weight', amount=0.8)
-                        torch.nn.utils.prune.l1_unstructured(self.model.encoder.link, 'bias', amount=1.0)
+                        torch.nn.utils.prune.ln_structured(self.model.encoder.link, name='weight', n=2, dim=0, amount=36)
+                        # torch.nn.utils.prune.l1_unstructured(self.model.encoder.link, 'bias', amount=1.0)
                         
                     loss, sample_size_i, logging_output = self.task.train_step(
                         sample=sample,

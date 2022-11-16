@@ -52,7 +52,7 @@ class TransformerEncoderBase(FairseqEncoder):
         if cfg.link:
             self.link = nn.Conv2d(12, 48, 1) # need to change
             # self.link.to(torch.float16)
-            print("link enabled")
+            # print("link enabled")
         self.register_buffer("version", torch.Tensor([3]))
 
         self.dropout_module = FairseqDropout(

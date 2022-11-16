@@ -185,7 +185,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         self.queue[id] = torch.cat((self.queue[id], tensor))
 
 
-    def forward(self, model, sample, epoch, reduce=True):
+    def forward(self, model, sample, epoch=None, reduce=True):
         """Compute the loss for the given sample.
 
         Returns a tuple with three elements:
@@ -238,14 +238,14 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         return lprobs.view(-1, lprobs.size(-1)), target.view(-1)
 
 
-    def compute_loss(self, model, net_output, sample, epoch, teacher_output=None, attn=None, teacher_attn=None):
+    def compute_loss(self, model, net_output, sample, epoch=None, teacher_output=None, attn=None, teacher_attn=None):
         lprobs, target = self.get_lprobs_and_target(model, net_output, sample)
         pad_mask = target.eq(self.padding_idx).view(-1)
         extra = dict()
 
         # get attn loss
         attn_loss = 0
-        if attn is not None and teacher_attn is not None:
+        if attn is not None and teacher_attn is not None and epoch is not None:
             attn_loss = F.mse_loss(attn, teacher_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
         
         # get student logits

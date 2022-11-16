@@ -244,7 +244,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         extra = dict()
 
         # get attn loss
-        attn_loss = 0
+        attn_loss = None
         if attn is not None and teacher_attn is not None and epoch is not None:
             attn_loss = F.mse_loss(attn, teacher_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
         
@@ -385,9 +385,9 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
 
         else:
             raise ValueError("unknown strategy or parameter mismatch")
-        
-        extra['attn_loss'] = attn_loss.sum()
-        loss += attn_loss
+        if attn_loss:
+            extra['attn_loss'] = attn_loss.sum()
+            loss += attn_loss
         return loss, extra
 
 

@@ -14,6 +14,8 @@ import os
 import sys
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+import torch.nn.utils.prune as prune
+
 torch.autograd.set_detect_anomaly(True)
 
 # We need to setup root logger before importing any fairseq libraries.
@@ -216,7 +218,8 @@ def main(cfg: FairseqConfig) -> None:
                 f"(--stop-min-lr={cfg.optimization.stop_min_lr})"
             )
             break
-
+        if epoch_itr.epoch == 2:
+            prune.ln_structured(model.encoder.link, name='weight', n=2, dim=0, amount=36)
         # train for one epoch
         valid_losses, should_stop = train(cfg, trainer, task, epoch_itr)
         if should_stop:

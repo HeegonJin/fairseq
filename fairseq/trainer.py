@@ -832,13 +832,13 @@ class Trainer(object):
                                 log_probs=True
                             )
                             sample["teacher_attn_output"] = teacher_attn_output
+                            sample['teacher_decoder_attn_output'] = teacher_output[1]['attn_tensor']
 
                             # sample["teacher_probs"] = self.teacher_model.get_normalized_probs(
                             #     teacher_output, 
                             #     log_probs=True
                             # )
-                    if epoch == 2:
-                        torch.nn.utils.prune.ln_structured(self.model.encoder.link, name='weight', n=2, dim=0, amount=36)
+
                         # torch.nn.utils.prune.l1_unstructured(self.model.encoder.link, 'bias', amount=1.0)
                         
                     loss, sample_size_i, logging_output = self.task.train_step(

@@ -13,6 +13,7 @@ import math
 import os
 import sys
 from typing import Any, Callable, Dict, List, Optional, Tuple
+import torch.nn.utils.prune as prune
 
 torch.autograd.set_detect_anomaly(True)
 
@@ -209,6 +210,9 @@ def main(cfg: FairseqConfig) -> None:
     train_meter = meters.StopwatchMeter()
     train_meter.start()
     while epoch_itr.next_epoch_idx <= max_epoch:
+        print(epoch_itr.epoch)
+        if epoch_itr.epoch == 2:
+            prune.ln_structured(model.encoder.link, name='weight', amount=36, n=2, dim=0)
         if lr <= cfg.optimization.stop_min_lr:
             logger.info(
                 f"stopping training because current learning rate ({lr}) is smaller "

@@ -29,7 +29,6 @@ from fairseq.models.ema import build_ema
 from fairseq.nan_detector import NanDetector
 from fairseq.optim import lr_scheduler
 from fairseq.utils import safe_hasattr
-import torch.nn.utils.prune
 
 logger = logging.getLogger(__name__)
 
@@ -837,9 +836,6 @@ class Trainer(object):
                             #     teacher_output, 
                             #     log_probs=True
                             # )
-                    if epoch == 2:
-                        torch.nn.utils.prune.ln_structured(self.model.encoder.link, name='weight', n=2, dim=0, amount=36)
-                        # torch.nn.utils.prune.l1_unstructured(self.model.encoder.link, 'bias', amount=1.0)
                         
                     loss, sample_size_i, logging_output = self.task.train_step(
                         sample=sample,

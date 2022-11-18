@@ -224,6 +224,9 @@ def main(cfg: FairseqConfig) -> None:
             break
         if epoch_itr.epoch == 2:
             prune.ln_structured(model.encoder.link, name='weight', n=2, dim=0, amount=36)
+            torch.nn.init.kaiming_uniform_(model.encoder.link.weight_orig)
+            prune.ln_structured(model.decoder.link, name='weight', n=2, dim=0, amount=36)
+            torch.nn.init.kaiming_uniform_(model.decoder.link.weight_orig)
         # train for one epoch
         valid_losses, should_stop = train(cfg, trainer, task, epoch_itr)
         if should_stop:

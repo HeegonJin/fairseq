@@ -421,6 +421,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         nll_loss_teacher = sum(log.get('nll_loss_teacher', 0) for log in logging_outputs)
         kd_loss = sum(log.get('kd_loss', 0) for log in logging_outputs)
         attn_loss = sum(log.get('attn_loss', 0) for log in logging_outputs)
+        decoder_attn_loss = sum(log.get('decoder_attn_loss', 0) for log in logging_outputs)
         # log metrics
         metrics.log_scalar(
             'loss', 
@@ -431,6 +432,12 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         metrics.log_scalar(
             'attn_loss', 
             attn_loss / sample_size / math.log(2), 
+            sample_size, 
+            round=3
+        )
+        metrics.log_scalar(
+            'decoder_attn_loss', 
+            decoder_attn_loss / sample_size / math.log(2), 
             sample_size, 
             round=3
         )

@@ -194,9 +194,11 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         3) logging outputs to display while training
         """
         net_output, attn_output = model(**sample["net_input"])
-
+        decoder_attn_output = net_output[1]['attn_tensor']
         teacher_output = sample.get("teacher_output", None)
         teacher_attn_output = sample.get("teacher_attn_output", None)
+        teacher_decoder_attn_output = sample.get("teacher_decoder_attn_output", None)
+
         loss, extra = self.compute_loss(
             model, 
             net_output, 
@@ -204,7 +206,9 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
             epoch,
             teacher_output=teacher_output,
             attn=attn_output,
-            teacher_attn=teacher_attn_output)
+            decoder_attn=decoder_attn_output,
+            teacher_attn=teacher_attn_output,
+            teacher_decoder_attn=teacher_decoder_attn_output)
 
         sample_size = (
             sample["target"].size(0) if self.sentence_avg else sample["ntokens"]
@@ -218,7 +222,8 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
             'kd_loss': extra['kd_loss'].data if extra.get('kd_loss', None) is not None else 0,
             'nll_loss_student': extra['nll_loss_student'].data if extra.get('nll_loss_student', None) is not None else loss.data,
             'nll_loss_teacher': extra['nll_loss_teacher'].data if extra.get('nll_loss_teacher', None) is not None else 0,
-            'attn_loss' : extra['attn_loss'].data if extra.get('attn_loss', None) is not None else 0
+            'attn_loss' : extra['attn_loss'].data if extra.get('attn_loss', None) is not None else 0,
+            'decoder_attn_loss': extra['decoder_attn_loss'].data if extra.get('decoder_attn_loss', None) is not None else 0 
         }
         
         if self.report_accuracy:
@@ -238,16 +243,17 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         return lprobs.view(-1, lprobs.size(-1)), target.view(-1)
 
 
-    def compute_loss(self, model, net_output, sample, epoch=None, teacher_output=None, attn=None, teacher_attn=None):
+    def compute_loss(self, model, net_output, sample, epoch=None, teacher_output=None, attn=None, decoder_attn=None, teacher_attn=None, teacher_decoder_attn=None):
         lprobs, target = self.get_lprobs_and_target(model, net_output, sample)
         pad_mask = target.eq(self.padding_idx).view(-1)
         extra = dict()
 
         # get attn loss
         attn_loss = None
+        decoder_attn_loss = None
         if attn is not None and teacher_attn is not None and epoch is not None:
             attn_loss = F.mse_loss(attn, teacher_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
-        
+            decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
         # get student logits
         student_logits = net_output[0]
         student_logits = student_logits.view(-1, student_logits.size(-1))
@@ -388,6 +394,9 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         if attn_loss:
             extra['attn_loss'] = attn_loss.sum()
             loss += attn_loss
+        if decoder_attn_loss:
+            extra['decoder_attn_loss'] = decoder_attn_loss.sum()
+            loss += decoder_attn_loss
         return loss, extra
 
 

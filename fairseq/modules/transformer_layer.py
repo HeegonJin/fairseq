@@ -393,7 +393,7 @@ class TransformerDecoderLayerBase(nn.Module):
         prev_attn_state: Optional[List[torch.Tensor]] = None,
         self_attn_mask: Optional[torch.Tensor] = None,
         self_attn_padding_mask: Optional[torch.Tensor] = None,
-        need_attn: bool = False,
+        need_attn: bool = True,
         need_head_weights: bool = True,
     ):
         """

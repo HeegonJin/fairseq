@@ -29,6 +29,7 @@ from fairseq.models.ema import build_ema
 from fairseq.nan_detector import NanDetector
 from fairseq.optim import lr_scheduler
 from fairseq.utils import safe_hasattr
+import torch.nn.utils.prune
 
 logger = logging.getLogger(__name__)
 
@@ -831,11 +832,14 @@ class Trainer(object):
                                 log_probs=True
                             )
                             sample["teacher_attn_output"] = teacher_attn_output
+                            sample['teacher_decoder_attn_output'] = teacher_output[1]['attn_tensor']
 
                             # sample["teacher_probs"] = self.teacher_model.get_normalized_probs(
                             #     teacher_output, 
                             #     log_probs=True
                             # )
+
+                        # torch.nn.utils.prune.l1_unstructured(self.model.encoder.link, 'bias', amount=1.0)
                         
                     loss, sample_size_i, logging_output = self.task.train_step(
                         sample=sample,

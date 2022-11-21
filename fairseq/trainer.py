@@ -566,9 +566,12 @@ class Trainer(object):
                         )
                         layer._prune_fc_layer(remove_index=remove_index)
                     logger.info(self.model)
-
+                if "encoder.link.weight_orig" in state["model"].keys():
+                    state["model"]["encoder.link.weight"] = state["model"]["encoder.link.weight_orig"]
+                if "decoder.link.weight_orig" in state["model"].keys():
+                    state["model"]["decoder.link.weight"] = state["model"]["decoder.link.weight_orig"]   
                 self.model.load_state_dict(
-                    state["model"], strict=True, model_cfg=self.cfg.model
+                    state["model"], strict=False, model_cfg=self.cfg.model
                 )
                 # save memory for later steps
                 del state["model"]

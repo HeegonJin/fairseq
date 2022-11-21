@@ -13,6 +13,7 @@ import math
 import os
 import sys
 from typing import Any, Callable, Dict, List, Optional, Tuple
+import torch.nn.utils.prune as prune
 
 import torch.nn.utils.prune as prune
 
@@ -211,6 +212,8 @@ def main(cfg: FairseqConfig) -> None:
     train_meter = meters.StopwatchMeter()
     train_meter.start()
     while epoch_itr.next_epoch_idx <= max_epoch:
+        print(epoch_itr.next_epoch_idx)
+
         if lr <= cfg.optimization.stop_min_lr:
             logger.info(
                 f"stopping training because current learning rate ({lr}) is smaller "
@@ -218,6 +221,14 @@ def main(cfg: FairseqConfig) -> None:
                 f"(--stop-min-lr={cfg.optimization.stop_min_lr})"
             )
             break
+<<<<<<< HEAD
+        if epoch_itr.next_epoch_idx == 2:
+            print('pruning')
+            prune.ln_structured(model.encoder.link, name='weight', n=2, dim=0, amount=36)
+            torch.nn.init.kaiming_uniform_(model.encoder.link.weight_orig)
+            prune.ln_structured(model.decoder.link, name='weight', n=2, dim=0, amount=36)
+            torch.nn.init.kaiming_uniform_(model.decoder.link.weight_orig)
+=======
         if epoch_itr.epoch == 2:
             if (cfg.task._name == "kd_translation") and (cfg.criterion._name == "kd_label_smoothed_cross_entropy"):
 
@@ -226,6 +237,7 @@ def main(cfg: FairseqConfig) -> None:
                 torch.nn.init.kaiming_uniform_(model.encoder.link.weight_orig)
                 prune.ln_structured(model.decoder.link, name='weight', n=2, dim=0, amount=36)
                 torch.nn.init.kaiming_uniform_(model.decoder.link.weight_orig)
+>>>>>>> cfb6fd2d523bb9da4a3c633b467f395439e20e5b
         # train for one epoch
         valid_losses, should_stop = train(cfg, trainer, task, epoch_itr)
         if should_stop:

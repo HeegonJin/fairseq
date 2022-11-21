@@ -246,6 +246,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
     def compute_loss(self, model, net_output, sample, epoch=None, teacher_output=None, attn=None, decoder_attn=None, teacher_attn=None, teacher_decoder_attn=None):
         lprobs, target = self.get_lprobs_and_target(model, net_output, sample)
         pad_mask = target.eq(self.padding_idx).view(-1)
+        KD_mask = None
         extra = dict()
 
         # get attn loss
@@ -391,6 +392,17 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
 
         else:
             raise ValueError("unknown strategy or parameter mismatch")
+        attn_loss = None
+        decoder_attn_loss = None
+        if attn is not None and teacher_attn is not None and epoch is not None:
+            attn_loss = F.mse_loss(attn, teacher_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
+            if KD_mask is not None:
+                B, H, T, S = decoder_attn.shape
+                decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='none') * self.rambda * (self.decay ** (epoch-1))
+                decoder_attn_loss = decoder_attn_loss.transpose(1,2).view(B*T,H,S)[~KD_mask].mean()
+            else:
+                decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
+            
         if attn_loss:
             extra['attn_loss'] = attn_loss.sum()
             loss += attn_loss

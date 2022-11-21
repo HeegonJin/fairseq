@@ -484,10 +484,10 @@ def load_model_ensemble_and_task(
                     and "num_updates" in state["optimizer_history"][-1]
                 ):
                     model.set_num_updates(state["optimizer_history"][-1]["num_updates"])
-            if "encoder.link.weight_orig" in state["model"].keys():
-                state["model"]["encoder.link.weight"] = state["model"]["encoder.link.weight_orig"]
-            if "decoder.link.weight_orig" in state["model"].keys():
-                state["model"]["decoder.link.weight"] = state["model"]["decoder.link.weight_orig"]    
+                if "encoder.link.weight_orig" in state["model"].keys():
+                    state["model"]["encoder.link.weight"] = state["model"]["encoder.link.weight_orig"]
+                if "decoder.link.weight_orig" in state["model"].keys():
+                    state["model"]["decoder.link.weight"] = state["model"]["decoder.link.weight_orig"]    
                 model.load_state_dict(
                     state["model"], strict=False, model_cfg=cfg.model
                 )

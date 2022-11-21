@@ -399,7 +399,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
             if KD_mask is not None:
                 B, H, T, S = decoder_attn.shape
                 decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='none') * self.rambda * (self.decay ** (epoch-1))
-                decoder_attn_loss = decoder_attn_loss.transpose(1,2).view(B*T,H,S)[~KD_mask].mean()
+                decoder_attn_loss = decoder_attn_loss.reshape(1,2).view(B*T,H,S)[~KD_mask].mean()
             else:
                 decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
             

@@ -212,9 +212,8 @@ def main(cfg: FairseqConfig) -> None:
     train_meter = meters.StopwatchMeter()
     train_meter.start()
     while epoch_itr.next_epoch_idx <= max_epoch:
-        print(epoch_itr.epoch)
-        if epoch_itr.epoch == 2:
-            prune.ln_structured(model.encoder.link, name='weight', amount=36, n=2, dim=0)
+        print(epoch_itr.next_epoch_idx)
+
         if lr <= cfg.optimization.stop_min_lr:
             logger.info(
                 f"stopping training because current learning rate ({lr}) is smaller "
@@ -222,7 +221,8 @@ def main(cfg: FairseqConfig) -> None:
                 f"(--stop-min-lr={cfg.optimization.stop_min_lr})"
             )
             break
-        if epoch_itr.epoch == 2:
+        if epoch_itr.next_epoch_idx == 2:
+            print('pruning')
             prune.ln_structured(model.encoder.link, name='weight', n=2, dim=0, amount=36)
             torch.nn.init.kaiming_uniform_(model.encoder.link.weight_orig)
             prune.ln_structured(model.decoder.link, name='weight', n=2, dim=0, amount=36)

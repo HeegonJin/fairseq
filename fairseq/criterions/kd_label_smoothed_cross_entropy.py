@@ -252,9 +252,9 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         # get attn loss
         attn_loss = None
         decoder_attn_loss = None
-        if attn is not None and teacher_attn is not None and epoch is not None:
-            attn_loss = F.mse_loss(attn, teacher_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
-            decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
+        # if attn is not None and teacher_attn is not None and epoch is not None:
+        #     attn_loss = F.mse_loss(attn, teacher_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
+        #     decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
         # get student logits
         student_logits = net_output[0]
         student_logits = student_logits.view(-1, student_logits.size(-1))

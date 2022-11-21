@@ -438,7 +438,11 @@ def load_model_ensemble_and_task(
 
             if "task_state" in state:
                 task.load_state_dict(state["task_state"])
-
+                
+            if "encoder.link.weight_orig" in state["model"].keys():
+                state["model"]["encoder.link.weight"] = state["model"]["encoder.link.weight_orig"]
+            if "decoder.link.weight_orig" in state["model"].keys():
+                state["model"]["decoder.link.weight"] = state["model"]["decoder.link.weight_orig"]   
             if "fsdp_metadata" in state and num_shards > 1:
                 model_shard_state["shard_weights"].append(state["model"])
                 model_shard_state["shard_metadata"].append(state["fsdp_metadata"])
@@ -463,7 +467,7 @@ def load_model_ensemble_and_task(
                             state["optimizer_history"][-1]["num_updates"]
                         )
                     model.load_state_dict(
-                        consolidated_model_state, strict=strict, model_cfg=cfg.model
+                        consolidated_model_state, strict=False, model_cfg=cfg.model
                     )
             else:
                 # model parallel checkpoint or unsharded checkpoint
@@ -480,8 +484,12 @@ def load_model_ensemble_and_task(
                     and "num_updates" in state["optimizer_history"][-1]
                 ):
                     model.set_num_updates(state["optimizer_history"][-1]["num_updates"])
+            if "encoder.link.weight_orig" in state["model"].keys():
+                state["model"]["encoder.link.weight"] = state["model"]["encoder.link.weight_orig"]
+            if "decoder.link.weight_orig" in state["model"].keys():
+                state["model"]["decoder.link.weight"] = state["model"]["decoder.link.weight_orig"]    
                 model.load_state_dict(
-                    state["model"], strict=strict, model_cfg=cfg.model
+                    state["model"], strict=False, model_cfg=cfg.model
                 )
 
             # reset state so it gets loaded for the next model in ensemble

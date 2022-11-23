@@ -224,9 +224,9 @@ def main(cfg: FairseqConfig) -> None:
             if (cfg.task._name == "kd_translation") and (cfg.criterion._name == "kd_label_smoothed_cross_entropy"):
 
                 print('pruning')
-                prune.ln_structured(model.encoder.link, name='weight', n=2, dim=0, amount=36)
+                prune.ln_structured(model.encoder.link, name='weight', n=2, dim=0, amount=0.5)
                 torch.nn.init.kaiming_uniform_(model.encoder.link.weight_orig)
-                prune.ln_structured(model.decoder.link, name='weight', n=2, dim=0, amount=36)
+                prune.ln_structured(model.decoder.link, name='weight', n=2, dim=0, amount=0.5)
                 torch.nn.init.kaiming_uniform_(model.decoder.link.weight_orig)
 
         # train for one epoch

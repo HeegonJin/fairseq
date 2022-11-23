@@ -61,7 +61,7 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
         super().__init__(dictionary)
         self.link = None
         if cfg.link:
-            self.link = nn.Conv2d(12, 48, 1) # need to change
+            self.link = nn.Conv2d(24, 96, 1) # need to change
         self.register_buffer("version", torch.Tensor([3]))
         self._future_mask = torch.empty(0)
 

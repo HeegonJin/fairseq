@@ -394,15 +394,25 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
             raise ValueError("unknown strategy or parameter mismatch")
         attn_loss = None
         decoder_attn_loss = None
-        if attn is not None and teacher_attn is not None and epoch is not None:
-            attn_loss = F.mse_loss(attn, teacher_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
-            if KD_mask is not None:
-                B, H, T, S = decoder_attn.shape
-                decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='none') * self.rambda * (self.decay ** (epoch-1))
-                decoder_attn_loss = decoder_attn_loss.transpose(1,2).reshape(B*T,H,S)[~KD_mask].mean()
-            else:
-                decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
-            
+        if epoch:
+            if epoch <=2:
+                if attn is not None and teacher_attn is not None and epoch is not None:
+                    attn_loss = F.mse_loss(attn, teacher_attn, reduction='mean') * self.rambda *0
+                    # if KD_mask is not None:
+                    #     B, H, T, S = decoder_attn.shape
+                    #     decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='none') * self.rambda * (self.decay ** (epoch-1))
+                    #     decoder_attn_loss = decoder_attn_loss.transpose(1,2).reshape(B*T,H,S)[~KD_mask].mean()
+                    # else:
+                    decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1)) * 0
+            else: 
+                if attn is not None and teacher_attn is not None and epoch is not None:
+                    attn_loss = F.mse_loss(attn, teacher_attn, reduction='mean') * self.rambda * 0
+                    # if KD_mask is not None:
+                    #     B, H, T, S = decoder_attn.shape
+                    #     decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='none') * self.rambda * (self.decay ** (epoch-1))
+                    #     decoder_attn_loss = decoder_attn_loss.transpose(1,2).reshape(B*T,H,S)[~KD_mask].mean()
+                    # else:
+                    decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1)) * 0
         if attn_loss:
             extra['attn_loss'] = attn_loss.sum()
             loss += attn_loss

@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional
 
 import torch
 import torch.nn as nn
-from torch import Tensor
 
 from fairseq import utils
 from fairseq.distributed import fsdp_wrap
@@ -26,6 +25,7 @@ from fairseq.modules import (
 )
 from fairseq.modules.checkpoint_activations import checkpoint_wrapper
 from fairseq.modules.quant_noise import quant_noise as apply_quant_noise_
+from torch import Tensor
 
 
 # rewrite name for backward compatibility in `make_generation_fast_`
@@ -42,7 +42,7 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
     is a :class:`TransformerDecoderLayer`.
 
     Args:
-        cfg (argparse.Namespace): parsed command-line arguments
+        args (argparse.Namespace): parsed command-line arguments
         dictionary (~fairseq.data.Dictionary): decoding dictionary
         embed_tokens (torch.nn.Embedding): output embedding
         no_encoder_attn (bool, optional): whether to attend to encoder outputs
@@ -59,9 +59,6 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
     ):
         self.cfg = cfg
         super().__init__(dictionary)
-        self.link = None
-        if cfg.link:
-            self.link = nn.Conv2d(24, 96, 1) # need to change
         self.register_buffer("version", torch.Tensor([3]))
         self._future_mask = torch.empty(0)
 
@@ -334,8 +331,6 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
         # decoder layers
         attn: Optional[Tensor] = None
         inner_states: List[Optional[Tensor]] = [x]
-        
-        attn_list = []
         for idx, layer in enumerate(self.layers):
             if incremental_state is None and not full_context_alignment:
                 self_attn_mask = self.buffered_future_mask(x)
@@ -349,21 +344,13 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
                 incremental_state,
                 self_attn_mask=self_attn_mask,
                 self_attn_padding_mask=self_attn_padding_mask,
-                need_attn=True,
-                need_head_weights=True
-                # need_attn=bool((idx == alignment_layer)),
-                # need_head_weights=bool((idx == alignment_layer)),
+                need_attn=bool((idx == alignment_layer)),
+                need_head_weights=bool((idx == alignment_layer)),
             )
-            attn_list.append(layer_attn)
             inner_states.append(x)
             if layer_attn is not None and idx == alignment_layer:
                 attn = layer_attn.float().to(x)
-        attn_tensor = torch.stack(attn_list, dim=0)
-        L, H, B , D1, D2 = attn_tensor.shape
-        attn_tensor = torch.reshape(attn_tensor, (L * H, B, D1, D2))
-        attn_tensor = attn_tensor.transpose(0, 1)
-        if self.link:
-            attn_tensor = self.link(attn_tensor)
+
         if attn is not None:
             if alignment_heads is not None:
                 attn = attn[:alignment_heads]
@@ -380,7 +367,7 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
         if self.project_out_dim is not None:
             x = self.project_out_dim(x)
 
-        return x, {"attn": [attn], "inner_states": inner_states, "attn_tensor": attn_tensor}
+        return x, {"attn": [attn], "inner_states": inner_states}
 
     def output_layer(self, features):
         """Project features to the vocabulary size."""

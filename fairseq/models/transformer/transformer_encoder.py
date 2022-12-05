@@ -50,9 +50,17 @@ class TransformerEncoderBase(FairseqEncoder):
         super().__init__(dictionary)
         self.link = None
         if cfg.link:
-            self.link = nn.Conv2d(24, 96, 1) # need to change
-            # self.link.to(torch.float16)
-            # print("link enabled")
+
+            self.link = nn.Conv2d(12, 24, 1) # need to change
+        checkpoint = cfg.checkpoint_activations
+        if checkpoint:
+            offload_to_cpu = cfg.offload_activations
+            self.link = checkpoint_wrapper(self.link, offload_to_cpu=offload_to_cpu)
+        # if we are checkpointing, enforce that FSDP always wraps the
+        # checkpointed layer, regardless of layer size
+        min_params_to_wrap = cfg.min_params_to_wrap if not checkpoint else 0
+        self.link = fsdp_wrap(self.link, min_num_params=min_params_to_wrap)
+           
         self.register_buffer("version", torch.Tensor([3]))
 
         self.dropout_module = FairseqDropout(

@@ -71,7 +71,6 @@ def main(cfg: FairseqConfig) -> None:
 
     np.random.seed(cfg.common.seed)
     utils.set_torch_seed(cfg.common.seed)
-
     if distributed_utils.is_master(cfg.distributed_training):
         checkpoint_utils.verify_checkpoint_directory(cfg.checkpoint.save_dir)
 
@@ -220,12 +219,12 @@ def main(cfg: FairseqConfig) -> None:
                 f"(--stop-min-lr={cfg.optimization.stop_min_lr})"
             )
             break
-        if epoch_itr.next_epoch_idx == 2:
-            if (cfg.task._name == "kd_translation") and (cfg.criterion._name == "kd_label_smoothed_cross_entropy"):
+        # if epoch_itr.next_epoch_idx == 2:
+            # if (cfg.task._name == "kd_translation") and (cfg.criterion._name == "kd_label_smoothed_cross_entropy"):
 
-                print('pruning')
-                prune.ln_structured(model.encoder.link, name='weight', n=2, dim=0, amount=0.5)
-                torch.nn.init.kaiming_uniform_(model.encoder.link.weight_orig)
+                # print('pruning')
+                # prune.ln_structured(model.encoder.link, name='weight', n=2, dim=0, amount=0.5)
+                # torch.nn.init.xavier_uniform_(model.encoder.link.weight_orig)
                 # prune.ln_structured(model.decoder.link, name='weight', n=2, dim=0, amount=0.5)
                 # torch.nn.init.kaiming_uniform_(model.decoder.link.weight_orig)
 

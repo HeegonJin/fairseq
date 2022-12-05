@@ -834,7 +834,6 @@ class Trainer(object):
                                 log_probs=True
                             )
                             sample["teacher_attn_output"] = teacher_attn_output
-                            sample['teacher_decoder_attn_output'] = teacher_output[1]['attn_tensor']
 
                             # sample["teacher_probs"] = self.teacher_model.get_normalized_probs(
                             #     teacher_output, 

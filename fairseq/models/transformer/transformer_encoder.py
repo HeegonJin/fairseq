@@ -59,8 +59,7 @@ class TransformerEncoderBase(FairseqEncoder):
         # checkpointed layer, regardless of layer size
         min_params_to_wrap = cfg.min_params_to_wrap if not checkpoint else 0
         self.link = fsdp_wrap(self.link, min_num_params=min_params_to_wrap)
-            # self.link.to(torch.float16)
-            # print("link enabled")
+           
         self.register_buffer("version", torch.Tensor([3]))
 
         self.dropout_module = FairseqDropout(

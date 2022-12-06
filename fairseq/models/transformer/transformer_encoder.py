@@ -50,7 +50,7 @@ class TransformerEncoderBase(FairseqEncoder):
         super().__init__(dictionary)
         self.link = None
         if cfg.link:
-            self.link = nn.Conv2d(12, 24, 1) # need to change
+            self.link = nn.Conv2d(24, 24, 1) # need to change
         checkpoint = cfg.checkpoint_activations
         if checkpoint:
             offload_to_cpu = cfg.offload_activations

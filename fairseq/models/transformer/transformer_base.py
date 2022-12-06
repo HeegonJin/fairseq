@@ -19,7 +19,7 @@ from fairseq.modules import FactorizedEmbedding
 from fairseq.models.transformer import (
     TransformerConfig,
     TransformerDecoderBase,
-    TransformerEncoderBase,
+    TransformerEncoderBase
 )
 
 

@@ -20,7 +20,7 @@ from fairseq.modules import (
     LayerNorm,
     PositionalEmbedding,
     SinusoidalPositionalEmbedding,
-    transformer_layer,
+    transformer_layer
 )
 from fairseq.modules.checkpoint_activations import checkpoint_wrapper
 from fairseq.modules.quant_noise import quant_noise as apply_quant_noise_
@@ -235,7 +235,7 @@ class TransformerEncoderBase(FairseqEncoder):
         attn_list = []
 
         for layer in self.layers:
-            lr, attn_out = layer(
+            lr, (attn_out, value_relation) = layer(
                 x, encoder_padding_mask=encoder_padding_mask if has_pads else None
             )
             # print(attn_out.shape)

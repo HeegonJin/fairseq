@@ -24,6 +24,7 @@ from fairseq.modules.fairseq_dropout import FairseqDropout
 from fairseq.modules.quant_noise import quant_noise
 from fairseq.models.fairseq_incremental_decoder import FairseqIncrementalDecoder
 
+from torch.nn.functional import _in_projection
 
 # TODO: move this into xformers?
 # TODO: uint8 input type should just output a bool
@@ -536,7 +537,14 @@ class MultiheadAttention(FairseqIncrementalDecoder):
                 )
 
             else:
-                return F.multi_head_attention_forward(
+                head_dim = self.embed_dim // self.num_heads
+                in_proj_bias = torch.cat((self.q_proj.bias, self.k_proj.bias, self.v_proj.bias))
+                b_q, b_k, b_v = in_proj_bias.chunk(3)
+                q, k, v = _in_projection(query, key, value, self.q_proj.weight, self.k_proj.weight, self.v_proj.weight, b_q, b_k, b_v)
+                v = v.contiguous().view(v.shape[0], bsz * self.num_heads, head_dim).transpose(0, 1)
+                value_relation = torch.bmm(v, v.transpose(1,2))
+
+                return (F.multi_head_attention_forward(
                     query,
                     key,
                     value,
@@ -559,7 +567,7 @@ class MultiheadAttention(FairseqIncrementalDecoder):
                     k_proj_weight=self.k_proj.weight,
                     v_proj_weight=self.v_proj.weight,
                     average_attn_weights=False
-                )
+                ), value_relation)
 
         if incremental_state is not None:
             saved_state = self._get_input_buffer(incremental_state)

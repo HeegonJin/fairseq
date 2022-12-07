@@ -17,6 +17,16 @@ from omegaconf import II
 
 @dataclass
 class KDLabelSmoothedCrossEntropyCriterionConfig(FairseqDataclass):
+    loss_type: str = field(
+        default='mse',
+        metadata={"help": "loss type mse or kld"},
+    )
+    decoder_kd: bool = field(
+        default=False, metadata={"help": "decoder attention distillation"}
+    )
+    value_kd: bool = field(
+        default=True, metadata={"help": "value relation distillation"}
+    )
     rambda: int = field(
         default=1000000,
         metadata={"help": "attn_loss weight"},
@@ -116,6 +126,9 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         kd_selection_temp,
         rambda,
         decay,
+        loss_type,
+        decoder_kd,
+        value_kd,
         ignore_prefix_size=0,
         report_accuracy=False,
     ):
@@ -138,6 +151,9 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         self.beta = 1 if adaptive_smoothing is not None else adaptive_smoothing
         self.rambda = rambda
         self.decay = decay
+        self.loss_type = loss_type
+        self.decoder_kd = decoder_kd
+        self.value_kd = value_kd
         if self.kd_strategy == "global_multi_level":
             self.queue = {}
             for id in self.task.src_lang_ids:
@@ -403,8 +419,14 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         if epoch:
             if epoch <=100:
                 if attn is not None and teacher_attn is not None and epoch is not None:
-                    attn_loss = F.mse_loss(attn, teacher_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
-                    value_relation_loss = F.mse_loss(value_relation, teacher_value_relation, reduction='mean') * self.rambda/10000 * (self.decay ** (epoch-1))
+                    if self.loss_type == 'mse':
+                        attn_loss = F.mse_loss((attn), teacher_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
+                        if self.value_kd:
+                            value_relation_loss = F.mse_loss(value_relation, teacher_value_relation, reduction='mean') * self.rambda/1000 * (self.decay ** (epoch-1))  
+                    elif self.loss_type == 'kld':
+                        attn_loss = F.kl_div(F.log_softmax(attn), teacher_attn, reduction='mean') * self.rambda/2 * (self.decay ** (epoch-1))
+                        if self.value_kd:
+                            value_relation_loss = F.kl_div(F.log_softmax(value_relation), teacher_value_relation, reduction='mean') * self.rambda/5000 * (self.decay ** (epoch-1))                        
                     # if KD_mask is not None:
                     #     B, H, T, S = decoder_attn.shape
                     #     decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='none') * self.rambda * (self.decay ** (epoch-1))
@@ -413,8 +435,8 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
                     # decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1)) * 0
             else: 
                 if attn is not None and teacher_attn is not None and epoch is not None:
-                    attn_loss = F.mse_loss(attn, teacher_attn, reduction='mean') * self.rambda * 0
-                    value_relation_loss = F.mse_loss(value_relation, teacher_value_relation, reduction='mean') * self.rambda * 0
+                    attn_loss = F.kl_div(attn, teacher_attn, reduction='mean') * self.rambda * 0
+                    value_relation_loss = F.kl_div(value_relation, teacher_value_relation, reduction='mean') * self.rambda * 0
 
                     # if KD_mask is not None:
                     #     B, H, T, S = decoder_attn.shape

@@ -3,7 +3,7 @@ from fairseq.models.transformer import base_architecture
 
 @register_model_architecture("transformer", "transformer_small_link")
 def transformer_base_link(args):
-    args.link = getattr(args, "link", True)
+    args.link = getattr(args, "link", False)
     args.encoder_embed_dim = getattr(args, "encoder_embed_dim", 512)
     args.encoder_ffn_embed_dim = getattr(args, "encoder_ffn_embed_dim", 1024)
     args.encoder_layers = getattr(args, "encoder_layers", 3)

@@ -233,13 +233,14 @@ class TransformerEncoderBase(FairseqEncoder):
 
         # encoder layers
         attn_list = []
-
+        value_list = []
         for layer in self.layers:
             lr, (attn_out, value_relation) = layer(
                 x, encoder_padding_mask=encoder_padding_mask if has_pads else None
             )
             # print(attn_out.shape)
             attn_list.append(attn_out)
+            value_list.append(value_relation)
             if isinstance(lr, tuple) and len(lr) == 2:
                 x, fc_result = lr
             else:
@@ -252,12 +253,16 @@ class TransformerEncoderBase(FairseqEncoder):
                 fc_results.append(fc_result)
         # print(attn_list[0].shape)
         attn_tensor = torch.stack(attn_list, dim=0)
+        value_tensor = torch.stack(value_list, dim=0)
         # print(attn_tensor.shape)
         attn_tensor = attn_tensor.transpose(0, 1)
+        value_tensor = value_tensor.transpose(0, 1)
         B, L, H , D1, D2 = attn_tensor.shape
         attn_tensor = torch.reshape(attn_tensor, (B, L * H, D1, D2))
+        value_tensor = torch.reshape(value_tensor, (B, L * H, D1, D2))
         if self.link:
             attn_tensor = self.link(attn_tensor)
+            value_tensor = self.link(value_tensor)
             # print(attn_tensor.shape)
         if self.layer_norm is not None:
             
@@ -281,7 +286,8 @@ class TransformerEncoderBase(FairseqEncoder):
             "fc_results": fc_results,  # List[T x B x C]
             "src_tokens": [],
             "src_lengths": [src_lengths],
-            "attn_tensor": attn_tensor
+            "attn_tensor": attn_tensor,
+            "value_tensor": value_tensor
         }
 
     @torch.jit.export

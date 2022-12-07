@@ -19,7 +19,7 @@ from fairseq.modules import FactorizedEmbedding
 from fairseq.models.transformer import (
     TransformerConfig,
     TransformerDecoderBase,
-    TransformerEncoderBase,
+    TransformerEncoderBase
 )
 
 
@@ -182,7 +182,7 @@ class TransformerModelBase(FairseqEncoderDecoderModel):
             src_lengths=src_lengths,
             return_all_hiddens=return_all_hiddens,
         )
-        return decoder_out, encoder_out['attn_tensor']
+        return decoder_out, (encoder_out['attn_tensor'], encoder_out['value_tensor'])
 
     # Since get_normalized_probs is in the Fairseq Model which is not scriptable,
     # I rewrite the get_normalized_probs from Base Class to call the

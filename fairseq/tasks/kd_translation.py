@@ -22,6 +22,15 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class KDTranslationConfig(TranslationConfig):
+    loss_type: str = field(
+        default='mse', metadata={"help": "distillation loss to be used"}
+    )
+    decoder_kd: int = field(
+        default=0, metadata={"help": "decoder attention distillation"}
+    )
+    value_kd: int = field(
+        default=1, metadata={"help": "value relation distillation"}
+    )
     kd_strategy: str = field(
         default="word_and_seq_level", metadata={"help": "distillation strategy to be used"}
     )
@@ -53,3 +62,6 @@ class KDTranslationTask(TranslationTask):
         self.src_lang_ids = [i for i in range(len(src_dict)) if src_dict[i].startswith("__src__")]
         self.rambda = cfg.rambda
         self.link = cfg.link
+        self.loss_type = cfg.loss_type
+        self.decoder_kd = cfg.decoder_kd
+        self.value_kd = cfg.value_kd

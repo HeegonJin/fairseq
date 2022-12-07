@@ -110,7 +110,7 @@ class LabelSmoothedCrossEntropyCriterion(FairseqCriterion):
             target,
             self.eps,
             ignore_index=self.padding_idx,
-            reduce=reduce,
+            reduce=True,
         )
         return loss, nll_loss
 

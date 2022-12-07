@@ -195,7 +195,7 @@ class TransformerEncoderLayerBase(nn.Module):
         if self.normalize_before:
             x = self.self_attn_layer_norm(x)
 
-        x, attn_out = self.self_attn(
+        (x, attn_out), value_relation = self.self_attn(
             query=x,
             key=x,
             value=x,
@@ -225,7 +225,7 @@ class TransformerEncoderLayerBase(nn.Module):
 
         if self.return_fc and not torch.jit.is_scripting():
             return x, fc_result
-        return x, attn_out
+        return x, (attn_out, value_relation)
 
 
 # backward compatible with the legacy argparse format
@@ -450,7 +450,7 @@ class TransformerDecoderLayerBase(nn.Module):
         else:
             y = x
 
-        x, attn = self.self_attn(
+        (x, attn), _ = self.self_attn(
             query=x,
             key=y,
             value=y,

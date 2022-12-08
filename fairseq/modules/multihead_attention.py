@@ -544,7 +544,7 @@ class MultiheadAttention(FairseqIncrementalDecoder):
                 v = v.contiguous().view(v.shape[0], bsz * self.num_heads, head_dim).transpose(0, 1)
                 value_relation = torch.bmm(v, v.transpose(1,2))
 
-                return (F.multi_head_attention_forward(
+                return F.multi_head_attention_forward(
                     query,
                     key,
                     value,
@@ -567,7 +567,7 @@ class MultiheadAttention(FairseqIncrementalDecoder):
                     k_proj_weight=self.k_proj.weight,
                     v_proj_weight=self.v_proj.weight,
                     average_attn_weights=False
-                ), value_relation)
+                ), value_relation
 
         if incremental_state is not None:
             saved_state = self._get_input_buffer(incremental_state)

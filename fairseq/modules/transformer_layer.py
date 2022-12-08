@@ -450,7 +450,7 @@ class TransformerDecoderLayerBase(nn.Module):
         else:
             y = x
 
-        (x, attn), _ = self.self_attn(
+        x, attn = self.self_attn(
             query=x,
             key=y,
             value=y,

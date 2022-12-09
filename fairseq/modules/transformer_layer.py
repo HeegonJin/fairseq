@@ -449,7 +449,6 @@ class TransformerDecoderLayerBase(nn.Module):
             y = torch.cat((encoder_out, x), dim=0)
         else:
             y = x
-        # print(len(x))
         x, attn = self.self_attn(
             query=x,
             key=y,
@@ -468,10 +467,7 @@ class TransformerDecoderLayerBase(nn.Module):
             x = self.attn_ln(x)
         if type(x) is tuple:
             x = x[0]
-        # print(len(x))
         x = self.dropout_module(x)
-        # print(len(x))
-        # print(len(residual))
         x = self.residual_connection(x, residual)
         if not self.normalize_before:
             x = self.self_attn_layer_norm(x)

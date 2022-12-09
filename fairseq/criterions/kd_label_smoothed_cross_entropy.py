@@ -210,12 +210,12 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         3) logging outputs to display while training
         """
         net_output, (attn_output, value_relation) = model(**sample["net_input"])
-        # decoder_attn_output = net_output[1]['attn_tensor']
+        decoder_attn_output = net_output[1]['attn_tensor']
         teacher_output = sample.get("teacher_output", None)
         teacher_attn_output = sample.get("teacher_attn_output", None)
         teacher_value_relation = sample.get("teacher_value_relation", None)
 
-        # teacher_decoder_attn_output = sample.get("teacher_decoder_attn_output", None)
+        teacher_decoder_attn_output = sample.get("teacher_decoder_attn_output", None)
 
         loss, extra = self.compute_loss(
             model, 
@@ -224,9 +224,9 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
             epoch,
             teacher_output=teacher_output,
             attn=attn_output,
-            # decoder_attn=decoder_attn_output,
+            decoder_attn=decoder_attn_output,
             teacher_attn=teacher_attn_output,
-            # teacher_decoder_attn=teacher_decoder_attn_output)
+            teacher_decoder_attn=teacher_decoder_attn_output,
             value_relation = value_relation,
             teacher_value_relation = teacher_value_relation
         )
@@ -432,7 +432,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
                     #     decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='none') * self.rambda * (self.decay ** (epoch-1))
                     #     decoder_attn_loss = decoder_attn_loss.transpose(1,2).reshape(B*T,H,S)[~KD_mask].mean()
                     # else:
-                    # decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1)) * 0
+                    decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
             else: 
                 if attn is not None and teacher_attn is not None and epoch is not None:
                     attn_loss = F.kl_div(attn, teacher_attn, reduction='mean') * self.rambda * 0

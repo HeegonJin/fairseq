@@ -59,6 +59,17 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
     ):
         self.cfg = cfg
         super().__init__(dictionary)
+        self.link=None
+        if cfg.link:
+            self.link = nn.Conv2d(cfg.decoder.attention_heads*cfg.decoder.layers, 24, 1) # need to change
+        checkpoint = cfg.checkpoint_activations
+        if checkpoint:
+            offload_to_cpu = cfg.offload_activations
+            self.link = checkpoint_wrapper(self.link, offload_to_cpu=offload_to_cpu)
+        # if we are checkpointing, enforce that FSDP always wraps the
+        # checkpointed layer, regardless of layer size
+        min_params_to_wrap = cfg.min_params_to_wrap if not checkpoint else 0
+        self.link = fsdp_wrap(self.link, min_num_params=min_params_to_wrap)
         self.register_buffer("version", torch.Tensor([3]))
         self._future_mask = torch.empty(0)
 
@@ -331,12 +342,12 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
         # decoder layers
         attn: Optional[Tensor] = None
         inner_states: List[Optional[Tensor]] = [x]
+        attn_list = []
         for idx, layer in enumerate(self.layers):
             if incremental_state is None and not full_context_alignment:
                 self_attn_mask = self.buffered_future_mask(x)
             else:
                 self_attn_mask = None
-
             x, layer_attn, _ = layer(
                 x,
                 enc,
@@ -347,10 +358,18 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
                 need_attn=bool((idx == alignment_layer)),
                 need_head_weights=bool((idx == alignment_layer)),
             )
+            attn_list.append(layer_attn)
             inner_states.append(x)
             if layer_attn is not None and idx == alignment_layer:
                 attn = layer_attn.float().to(x)
-
+        attn_tensor = torch.stack(attn_list, dim=0)
+        # print(attn_tensor.shape)
+        attn_tensor = attn_tensor.permute(2, 0, 1, 3, 4)
+        # print(attn_tensor.shape)
+        B, L, H , D1, D2 = attn_tensor.shape
+        attn_tensor = torch.reshape(attn_tensor, (B, L * H, D1, D2))
+        if self.link:
+            attn_tensor = self.link(attn_tensor)
         if attn is not None:
             if alignment_heads is not None:
                 attn = attn[:alignment_heads]
@@ -367,7 +386,7 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
         if self.project_out_dim is not None:
             x = self.project_out_dim(x)
 
-        return x, {"attn": [attn], "inner_states": inner_states}
+        return x, {"attn_tensor": attn_tensor, "attn": [attn], "inner_states": inner_states}
 
     def output_layer(self, features):
         """Project features to the vocabulary size."""

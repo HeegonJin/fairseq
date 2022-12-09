@@ -467,6 +467,7 @@ class TransformerDecoderLayerBase(nn.Module):
             x = self.attn_ln(x)
         if type(x) is tuple:
             x = x[0]
+            attn = x[1]
         x = self.dropout_module(x)
         x = self.residual_connection(x, residual)
         if not self.normalize_before:

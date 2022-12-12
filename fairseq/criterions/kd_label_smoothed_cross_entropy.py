@@ -432,6 +432,20 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
                             value_relation_loss = F.kl_div(F.log_softmax(value_relation), teacher_value_relation, reduction='mean') * self.rambda/5000 * (self.decay ** (epoch-1))          
                         if self.decoder_kd:
                             decoder_attn_loss = F.kl_div(F.log_softmax(decoder_attn), teacher_decoder_attn, reduction='mean') * self.rambda/2 * (self.decay ** (epoch-1))
+                    elif self.loss_type == 'minilm':
+                        attn = attn[:,-4:, :, :]
+                        teacher_attn = teacher_attn[:,-4:, :, :]
+                        value_relation = value_relation[:, -4:, :, :]
+                        teacher_value_relation = teacher_value_relation[:, -4:, :, :]
+                        decoder_attn = decoder_attn[:, -4:, :, :]
+                        teacher_decoder_attn = teacher_decoder_attn[:, -4:, :, :]
+                        attn_loss = F.kl_div(F.log_softmax(attn), F.log_softmax(teacher_attn), reduction='mean', log_target=True) * self.rambda * (self.decay ** (epoch-1))*100
+                        if self.value_kd:
+                            value_relation_loss = F.kl_div(F.log_softmax(value_relation), F.log_softmax(teacher_value_relation), reduction='mean', log_target=True) * self.rambda/5000 * (self.decay ** (epoch-1))*100          
+                        if self.decoder_kd:
+                            decoder_attn_loss = F.kl_div(F.log_softmax(decoder_attn), F.log_softmax(teacher_decoder_attn), reduction='mean',log_target=True) * self.rambda/2 * (self.decay ** (epoch-1))*100
+
+                        
                     # if KD_mask is not None:
                     #     B, H, T, S = decoder_attn.shape
                     #     decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='none') * self.rambda * (self.decay ** (epoch-1))

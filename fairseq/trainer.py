@@ -833,6 +833,7 @@ class Trainer(object):
                                 teacher_output, 
                                 log_probs=True
                             )
+                            sample['teacher_decoder_attn_output'] = teacher_output[1]['attn_tensor']
                             sample["teacher_attn_output"] = teacher_attn_output
                             sample["teacher_value_relation"] = teacher_value_relation
 

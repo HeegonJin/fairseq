@@ -543,6 +543,8 @@ class MultiheadAttention(FairseqIncrementalDecoder):
                 q, k, v = _in_projection(query, key, value, self.q_proj.weight, self.k_proj.weight, self.v_proj.weight, b_q, b_k, b_v)
                 v = v.contiguous().view(v.shape[0], bsz * self.num_heads, head_dim).transpose(0, 1)
                 value_relation = torch.bmm(v, v.transpose(1,2))
+                value_relation = value_relation / (head_dim)**(1/2)
+                value_relation = F.softmax(value_relation)
 
                 return F.multi_head_attention_forward(
                     query,

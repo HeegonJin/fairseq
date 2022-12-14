@@ -61,6 +61,7 @@ def load_langpair_dataset(
 ):
     def split_exists(split, src, tgt, lang, data_path):
         filename = os.path.join(data_path, "{}.{}-{}.{}".format(split, src, tgt, lang))
+        # print(filename)
         return indexed_dataset.dataset_exists(filename, impl=dataset_impl)
 
     src_datasets = []
@@ -68,7 +69,7 @@ def load_langpair_dataset(
 
     for k in itertools.count():
         split_k = split + (str(k) if k > 0 else "")
-
+        
         # infer langcode
         if split_exists(split_k, src, tgt, src, data_path):
             prefix = os.path.join(data_path, "{}.{}-{}.".format(split_k, src, tgt))

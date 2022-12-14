@@ -47,7 +47,7 @@ def transformer_base_link(args):
 
 @register_model_architecture("transformer", "transformer_tiny_link")
 def transformer_tiny_link(args):
-    args.link = getattr(args, "link", False)
+    args.link = getattr(args, "link", True)
     args.encoder_embed_dim = getattr(args, "encoder_embed_dim", 512)
     args.encoder_ffn_embed_dim = getattr(args, "encoder_ffn_embed_dim", 1024)
     args.encoder_layers = getattr(args, "encoder_layers", 3)
@@ -59,8 +59,8 @@ def transformer_tiny_link(args):
 @register_model_architecture("transformer", "transformer_tiny_nolink")
 def transformer_tiny_nolink(args):
     args.link = getattr(args, "link", False)
-    args.encoder_embed_dim = getattr(args, "encoder_embed_dim", 256)
-    args.encoder_ffn_embed_dim = getattr(args, "encoder_ffn_embed_dim", 256)
+    args.encoder_embed_dim = getattr(args, "encoder_embed_dim", 512)
+    args.encoder_ffn_embed_dim = getattr(args, "encoder_ffn_embed_dim", 1024)
     args.encoder_layers = getattr(args, "encoder_layers", 3)
     args.encoder_attention_heads = getattr(args, "encoder_attention_heads", 4)
     args.decoder_layers = getattr(args, "decoder_layers", 3)

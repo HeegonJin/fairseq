@@ -26,6 +26,8 @@ from fairseq.models.fairseq_incremental_decoder import FairseqIncrementalDecoder
 
 from torch.nn.functional import _in_projection
 
+from einops import rearrange
+
 # TODO: move this into xformers?
 # TODO: uint8 input type should just output a bool
 def _mask_for_xformers(mask: Tensor, to_dtype: Optional[torch.dtype] = None):
@@ -542,9 +544,10 @@ class MultiheadAttention(FairseqIncrementalDecoder):
                 b_q, b_k, b_v = in_proj_bias.chunk(3)
                 q, k, v = _in_projection(query, key, value, self.q_proj.weight, self.k_proj.weight, self.v_proj.weight, b_q, b_k, b_v)
                 v = v.contiguous().view(v.shape[0], bsz * self.num_heads, head_dim).transpose(0, 1)
-                value_relation = torch.bmm(v, v.transpose(1,2))
+                # print(v.shape)
+                v_tmp = rearrange(v, '(B C) X D -> B C X D', B=bsz, C=self.num_heads)
+                value_relation = torch.matmul(v_tmp, v_tmp.transpose(2,3))
                 value_relation = value_relation / (head_dim)**(1/2)
-                value_relation = F.softmax(value_relation)
 
                 return F.multi_head_attention_forward(
                     query,

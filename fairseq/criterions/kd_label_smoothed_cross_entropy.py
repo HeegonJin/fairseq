@@ -441,9 +441,9 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
                         teacher_decoder_attn = teacher_decoder_attn[:, -4:, :, :]
                         attn_loss = F.kl_div(F.log_softmax(attn), F.log_softmax(teacher_attn), reduction='mean', log_target=True) * self.rambda * (self.decay ** (epoch-1))*50
                         if self.value_kd:
-                            value_relation_loss = F.kl_div((value_relation).log(), teacher_value_relation, reduction='mean', log_target=True) * self.rambda/25000 * (self.decay ** (epoch-1))*100          
+                            value_relation_loss = F.kl_div((value_relation).log(), teacher_value_relation.log(), reduction='mean', log_target=True) * self.rambda * (self.decay ** (epoch-1))*50          
                         if self.decoder_kd:
-                            decoder_attn_loss = F.kl_div(F.log_softmax(decoder_attn), F.log_softmax(teacher_decoder_attn), reduction='mean',log_target=True) * self.rambda/2 * (self.decay ** (epoch-1))*100
+                            decoder_attn_loss = F.kl_div(F.log_softmax(decoder_attn), F.log_softmax(teacher_decoder_attn), reduction='mean',log_target=True) * self.rambda/2 * (self.decay ** (epoch-1))*50
 
                         
                     # if KD_mask is not None:

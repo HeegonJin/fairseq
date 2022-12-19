@@ -254,6 +254,12 @@ class TransformerConfig(FairseqDataclass):
             "help": "config for attention augmentation module"
         }
     )
+    regressor: bool = field(
+        default=False,
+        metadata={
+            "help": "config for attention regression module"
+        }
+    )
     # We need to make this hierarchical dataclass like the flat namespace
     # __getattr__ and __setattr__ here allow backward compatibility
     # for subclasses of Transformer(Legacy) that depend on read/write on

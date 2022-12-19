@@ -827,7 +827,7 @@ class Trainer(object):
                     # forward and backward
                     if self.perform_distillation:
                         with torch.no_grad():
-                            teacher_output, (teacher_attn_output, teacher_value_relation) = self.teacher_model(**sample["net_input"])
+                            teacher_output, (teacher_attn_output, teacher_value_relation, teacher_regressed_maps) = self.teacher_model(None, **sample["net_input"])
                             sample["teacher_output"] = teacher_output
                             sample["teacher_lprobs"] = self.teacher_model.get_normalized_probs(
                                 teacher_output, 
@@ -836,7 +836,7 @@ class Trainer(object):
                             sample['teacher_decoder_attn_output'] = teacher_output[1]['attn_tensor']
                             sample["teacher_attn_output"] = teacher_attn_output
                             sample["teacher_value_relation"] = teacher_value_relation
-
+                            sample['teacher_regressed_maps'] = teacher_regressed_maps
                             # sample["teacher_probs"] = self.teacher_model.get_normalized_probs(
                             #     teacher_output, 
                             #     log_probs=True
@@ -851,7 +851,8 @@ class Trainer(object):
                         optimizer=self.optimizer,
                         update_num=self.get_num_updates(),
                         epoch=epoch,
-                        ignore_grad=is_dummy_batch
+                        ignore_grad=is_dummy_batch,
+                        teacher_maps=teacher_attn_output
                     )
                         
                     del loss
@@ -1143,7 +1144,7 @@ class Trainer(object):
             sample, is_dummy_batch = self._prepare_sample(sample)
 
             if self.perform_distillation:
-                teacher_output, teacher_attn_output = self.teacher_model(**sample["net_input"])
+                teacher_output, teacher_attn_output = self.teacher_model(None, **sample["net_input"])
                 sample["teacher_output"] = teacher_output
                 sample["teacher_lprobs"] = self.teacher_model.get_normalized_probs(
                     teacher_output, 

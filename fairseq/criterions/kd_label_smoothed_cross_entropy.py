@@ -445,9 +445,10 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
                         teacher_value_relation = teacher_value_relation[:, -4:, :, :]
                         decoder_attn = decoder_attn[:, -4:, :, :]
                         teacher_decoder_attn = teacher_decoder_attn[:, -4:, :, :]
-                        attn_loss = F.kl_div(F.log_softmax(rearrange(attn, 'B C H W -> B C (H W)'), dim=-1), F.log_softmax(rearrange(teacher_attn, 'B C H W -> B C (H W)'), dim=-1), reduction='batchmean', log_target=True) * self.rambda * (self.decay ** (epoch-1))
+                        attn_loss = F.kl_div(F.log_softmax(rearrange(teacher_attn, 'B C H W -> B C (H W)'), dim=-1), F.log_softmax(rearrange(attn, 'B C H W -> B C (H W)'), dim=-1), reduction='batchmean', log_target=True) * self.rambda * (self.decay ** (epoch-1))
                         if self.value_kd:
-                            value_relation_loss = F.kl_div(F.log_softmax(rearrange(value_relation, 'B C H W -> B C (H W)'), dim=-1), F.log_softmax(rearrange(teacher_value_relation, 'B C H W -> B C (H W)'), dim=-1), reduction='batchmean', log_target=True) * self.rambda * (self.decay ** (epoch-1)) / 100
+                            x = value_relation.shape[2]
+                            value_relation_loss = F.kl_div(F.log_softmax(rearrange(teacher_value_relation, 'B C H W -> B C (H W)'), dim=-1), F.log_softmax(rearrange(value_relation, 'B C H W -> B C (H W)'), dim=-1), reduction='batchmean', log_target=True) * self.rambda * (self.decay ** (epoch-1)) / (x * 4)
                         if self.decoder_kd:
                             decoder_attn_loss = F.kl_div(F.log_softmax(rearrange(decoder_attn, 'B C H W -> B C (H W)'), dim=-1), F.log_softmax(rearrange(teacher_decoder_attn, 'B C H W -> B C (H W)'), dim=-1), reduction='batchmean', log_target=True) * self.rambda * (self.decay ** (epoch-1))
 

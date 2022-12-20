@@ -25,6 +25,9 @@ class KDTranslationConfig(TranslationConfig):
     loss_type: str = field(
         default='mse', metadata={"help": "distillation loss to be used"}
     )
+    regressor: bool = field(
+        default=False, metadata={"help": "regressor use"}
+    )
     decoder_kd: int = field(
         default=0, metadata={"help": "decoder attention distillation"}
     )
@@ -62,6 +65,8 @@ class KDTranslationTask(TranslationTask):
         self.src_lang_ids = [i for i in range(len(src_dict)) if src_dict[i].startswith("__src__")]
         self.rambda = cfg.rambda
         self.link = cfg.link
+        self.regressor = cfg.regressor
         self.loss_type = cfg.loss_type
         self.decoder_kd = cfg.decoder_kd
         self.value_kd = cfg.value_kd
+        

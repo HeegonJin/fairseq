@@ -51,8 +51,11 @@ class TransformerEncoderBase(FairseqEncoder):
         # print(cfg)
         # print(dictionary)
         self.link = None
+        self.regressor = None
+        if cfg.regressor:
+            self.regressor = nn.Conv2d(24, cfg.encoder.attention_heads*cfg.encoder.layers, 1)
         if cfg.link:
-            self.link = nn.Conv2d(cfg.encoder.attention_heads*cfg.encoder.layers, 24, 1) # need to change
+            self.link = nn.Conv2d(cfg.encoder.attention_heads*cfg.encoder.layers, 96, 1) # need to change
         checkpoint = cfg.checkpoint_activations
         if checkpoint:
             offload_to_cpu = cfg.offload_activations
@@ -152,6 +155,7 @@ class TransformerEncoderBase(FairseqEncoder):
         src_lengths: Optional[torch.Tensor] = None,
         return_all_hiddens: bool = False,
         token_embeddings: Optional[torch.Tensor] = None,
+        teacher_maps=None
     ):
         """
         Args:
@@ -177,7 +181,7 @@ class TransformerEncoderBase(FairseqEncoder):
                   Only populated if *return_all_hiddens* is True.
         """
         return self.forward_scriptable(
-            src_tokens, src_lengths, return_all_hiddens, token_embeddings
+            src_tokens, src_lengths, return_all_hiddens, token_embeddings, teacher_maps=teacher_maps
         )
 
     # TorchScript doesn't support super() method so that the scriptable Subclass
@@ -190,6 +194,7 @@ class TransformerEncoderBase(FairseqEncoder):
         src_lengths: Optional[torch.Tensor] = None,
         return_all_hiddens: bool = False,
         token_embeddings: Optional[torch.Tensor] = None,
+        teacher_maps=None
     ):
         """
         Args:
@@ -256,6 +261,7 @@ class TransformerEncoderBase(FairseqEncoder):
         # print(attn_list[0].shape)
         attn_tensor = torch.stack(attn_list, dim=0)
         value_tensor = torch.stack(value_list, dim=0)
+        regressed_maps = None
         # print(attn_tensor.shape)
         attn_tensor = attn_tensor.transpose(0, 1)
         value_tensor = value_tensor.transpose(0, 1)
@@ -266,6 +272,9 @@ class TransformerEncoderBase(FairseqEncoder):
             attn_tensor = self.link(attn_tensor)
             value_tensor = self.link(value_tensor)
             # print(attn_tensor.shape)
+        if self.regressor:
+            if teacher_maps is not None:
+                regressed_maps = self.regressor(teacher_maps)
         if self.layer_norm is not None:
             
             x = self.layer_norm(x)
@@ -289,7 +298,8 @@ class TransformerEncoderBase(FairseqEncoder):
             "src_tokens": [],
             "src_lengths": [src_lengths],
             "attn_tensor": attn_tensor,
-            "value_tensor": value_tensor
+            "value_tensor": value_tensor,
+            "regressed_maps": regressed_maps
         }
 
     @torch.jit.export

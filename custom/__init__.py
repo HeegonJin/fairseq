@@ -35,7 +35,7 @@ def transformer_small_link(args):
     return base_architecture(args)
 
 @register_model_architecture("transformer", "transformer_2layers_8heads")
-def transformer_2layers(args):
+def transformer_2layers_8heads(args):
     args.link = getattr(args, "link", True)
     args.encoder_embed_dim = getattr(args, "encoder_embed_dim", 512)
     args.encoder_ffn_embed_dim = getattr(args, "encoder_ffn_embed_dim", 1024)

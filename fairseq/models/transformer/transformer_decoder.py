@@ -61,7 +61,7 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
         super().__init__(dictionary)
         self.link=None
         if cfg.link:
-            self.link = nn.Conv2d(cfg.decoder.attention_heads*cfg.decoder.layers, 96, 1) # need to change
+            self.link = nn.Conv2d(cfg.decoder.attention_heads*cfg.decoder.layers, 24, 1) # need to change
         checkpoint = cfg.checkpoint_activations
         if checkpoint:
             offload_to_cpu = cfg.offload_activations

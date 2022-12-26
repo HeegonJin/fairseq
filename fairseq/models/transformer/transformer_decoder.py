@@ -368,6 +368,7 @@ class TransformerDecoderBase(FairseqIncrementalDecoder):
         # print(attn_tensor.shape)
         B, L, H , D1, D2 = attn_tensor.shape
         attn_tensor = torch.reshape(attn_tensor, (B, L * H, D1, D2))
+        # attn_tensor = attn_tensor.half()
         if self.link:
             attn_tensor = self.link(attn_tensor)
         if attn is not None:

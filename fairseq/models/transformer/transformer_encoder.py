@@ -51,9 +51,12 @@ class TransformerEncoderBase(FairseqEncoder):
         # print(cfg)
         # print(dictionary)
         self.link = None
-        self.regressor = None
+        self.regressor1 = None
+        self.regressor2 = None
+
         if cfg.regressor:
-            self.regressor = nn.Conv2d(24, cfg.encoder.attention_heads*cfg.encoder.layers, 1)
+            self.regressor1 = nn.Linear(1024, 512)
+            self.regressor2 = nn.Linear(1024, 512)
         if cfg.link:
             self.link = nn.Conv2d(cfg.encoder.attention_heads*cfg.encoder.layers, 96, 1) # need to change
         checkpoint = cfg.checkpoint_activations
@@ -246,7 +249,7 @@ class TransformerEncoderBase(FairseqEncoder):
                 x, encoder_padding_mask=encoder_padding_mask if has_pads else None
             )
             # print(attn_out.shape)
-            attn_list.append(attn_out)
+            attn_list.append(lr)
             value_list.append(value_relation)
             if isinstance(lr, tuple) and len(lr) == 2:
                 x, fc_result = lr
@@ -265,16 +268,20 @@ class TransformerEncoderBase(FairseqEncoder):
         # print(attn_tensor.shape)
         attn_tensor = attn_tensor.transpose(0, 1)
         value_tensor = value_tensor.transpose(0, 1)
-        B, L, H , D1, D2 = attn_tensor.shape
-        attn_tensor = torch.reshape(attn_tensor, (B, L * H, D1, D2))
-        value_tensor = torch.reshape(value_tensor, (B, L * H, D1, D2))
+        B, L , D1, D2 = attn_tensor.shape
+        # attn_tensor = torch.reshape(attn_tensor, (B, L * H, D1, D2))
+        # value_tensor = torch.reshape(value_tensor, (B, L * H, D1, D2))
         if self.link:
             attn_tensor = self.link(attn_tensor)
             value_tensor = self.link(value_tensor)
-            # print(attn_tensor.shape)
-        if self.regressor:
+        # print(attn_tensor.shape)
+        if self.regressor1 and self.regressor2:
             if teacher_maps is not None:
-                regressed_maps = self.regressor(teacher_maps)
+                # print(teacher_maps.shape)
+                regressed_maps1 = self.regressor1(torch.cat((teacher_maps[:,0, :, :], teacher_maps[:,1, :, :]), dim=-1))
+                regressed_maps2 = self.regressor2(torch.cat((teacher_maps[:,4, :, :], teacher_maps[:, 5, :, :]), dim=-1))
+                regressed_maps = torch.stack((regressed_maps1, regressed_maps2), dim=1)
+                # print(regressed_maps.shape)
         if self.layer_norm is not None:
             
             x = self.layer_norm(x)

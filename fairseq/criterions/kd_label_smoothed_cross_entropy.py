@@ -430,7 +430,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
                         if self.decoder_kd:
                             decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1)) * 0
                     elif self.loss_type == 'regression':
-                        regression_loss = F.mse_loss((attn), regressed_maps, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
+                        regression_loss = F.mse_loss((attn), regressed_maps, reduction='mean') * self.rambda * (self.decay ** (epoch-1)) /50
                         if self.value_kd:
                             x = value_relation.shape[2]
                             value_relation_loss = F.kl_div(F.log_softmax(rearrange(teacher_value_relation, 'B C H W -> B C (H W)'), dim=-1), F.log_softmax(rearrange(value_relation, 'B C H W -> B C (H W)'), dim=-1), reduction='batchmean', log_target=True) * self.rambda * (self.decay ** (epoch-1)) / (x * 4)

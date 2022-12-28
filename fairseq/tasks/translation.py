@@ -28,7 +28,7 @@ from fairseq.data import (
 from fairseq.data.indexed_dataset import get_available_dataset_impl
 from fairseq.dataclass import ChoiceEnum, FairseqDataclass
 from fairseq.tasks import FairseqTask, register_task
-
+from fairseq.data.subsample_dataset import SubsampleDataset
 
 EVAL_BLEU_ORDER = 4
 
@@ -114,8 +114,10 @@ def load_langpair_dataset(
     assert len(src_datasets) == len(tgt_datasets) or len(tgt_datasets) == 0
 
     if len(src_datasets) == 1:
-        src_dataset = src_datasets[0]
+        src_dataset = src_datasets[0] 
         tgt_dataset = tgt_datasets[0] if len(tgt_datasets) > 0 else None
+        # src_dataset = SubsampleDataset(src_dataset, 0.05)
+        # tgt_dataset = SubsampleDataset(tgt_dataset, 0.05)
     else:
         sample_ratios = [1] * len(src_datasets)
         sample_ratios[0] = upsample_primary

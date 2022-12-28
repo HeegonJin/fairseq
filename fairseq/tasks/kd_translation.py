@@ -29,10 +29,10 @@ class KDTranslationConfig(TranslationConfig):
         default=False, metadata={"help": "regressor use"}
     )
     decoder_kd: int = field(
-        default=0, metadata={"help": "decoder attention distillation"}
+        default=1, metadata={"help": "decoder attention distillation"}
     )
     value_kd: int = field(
-        default=1, metadata={"help": "value relation distillation"}
+        default=0, metadata={"help": "value relation distillation"}
     )
     kd_strategy: str = field(
         default="word_and_seq_level", metadata={"help": "distillation strategy to be used"}
@@ -41,7 +41,7 @@ class KDTranslationConfig(TranslationConfig):
         default="./", metadata={"help": "teacher checkpoint path when performing distillation"}
     )
     rambda: float = field(
-        default="1", metadata={"help": "attn_loss weight"}
+        default="1000000", metadata={"help": "attn_loss weight"}
     )
     link : bool = field(
         default = False, metadata={"help": "attention augmentation module"}

@@ -268,9 +268,10 @@ class TransformerEncoderBase(FairseqEncoder):
         # print(attn_tensor.shape)
         attn_tensor = attn_tensor.transpose(0, 1)
         value_tensor = value_tensor.transpose(0, 1)
-        B, L , D1, D2 = attn_tensor.shape
-        # attn_tensor = torch.reshape(attn_tensor, (B, L * H, D1, D2))
-        # value_tensor = torch.reshape(value_tensor, (B, L * H, D1, D2))
+        B, L, H , D1, D2 = attn_tensor.shape
+        attn_tensor = torch.reshape(attn_tensor, (B, L * H, D1, D2))
+        value_tensor = torch.reshape(value_tensor, (B, L * H, D1, D2))
+        # attn_tensor = attn_tensor.half()
         if self.link:
             attn_tensor = self.link(attn_tensor)
             value_tensor = self.link(value_tensor)

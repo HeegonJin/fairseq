@@ -156,6 +156,7 @@ class TransformerModelBase(FairseqEncoderDecoderModel):
     # Current workaround is to add union of all arguments in child classes.
     def forward(
         self,
+        teacher_maps,
         src_tokens,
         src_lengths,
         prev_output_tokens,
@@ -171,7 +172,8 @@ class TransformerModelBase(FairseqEncoderDecoderModel):
         which are not supported by TorchScript.
         """
         encoder_out = self.encoder(
-            src_tokens, src_lengths=src_lengths, return_all_hiddens=return_all_hiddens)
+            src_tokens, src_lengths=src_lengths, return_all_hiddens=return_all_hiddens, teacher_maps=teacher_maps
+        )
         decoder_out = self.decoder(
             prev_output_tokens,
             encoder_out=encoder_out,

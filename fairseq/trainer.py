@@ -827,7 +827,6 @@ class Trainer(object):
                     # forward and backward
                     if self.perform_distillation:
                         with torch.no_grad():
-                            teacher_attn_output=None
                             teacher_output, (teacher_attn_output, teacher_value_relation, teacher_regressed_maps) = self.teacher_model(None, **sample["net_input"])
                             sample["teacher_output"] = teacher_output
                             sample["teacher_lprobs"] = self.teacher_model.get_normalized_probs(
@@ -844,9 +843,7 @@ class Trainer(object):
                             # )
 
                         # torch.nn.utils.prune.l1_unstructured(self.model.encoder.link, 'bias', amount=1.0)
-                    else:
-                        teacher_attn_output=None
-
+                        
                     loss, sample_size_i, logging_output = self.task.train_step(
                         sample=sample,
                         model=self.model,
@@ -855,6 +852,7 @@ class Trainer(object):
                         update_num=self.get_num_updates(),
                         epoch=epoch,
                         ignore_grad=is_dummy_batch,
+                        teacher_maps=teacher_attn_output
                     )
                         
                     del loss

@@ -51,14 +51,11 @@ class TransformerEncoderBase(FairseqEncoder):
         # print(cfg)
         # print(dictionary)
         self.link = None
-        self.regressor1 = None
-        self.regressor2 = None
-
+        self.regressor = None
         if cfg.regressor:
-            self.regressor1 = nn.Linear(1024, 512)
-            self.regressor2 = nn.Linear(1024, 512)
+            self.regressor = nn.Conv2d(24, cfg.encoder.attention_heads*cfg.encoder.layers, 1)
         if cfg.link:
-            self.link = nn.Conv2d(cfg.encoder.attention_heads*cfg.encoder.layers, 96, 1) # need to change
+            self.link = nn.Conv2d(48, 24, 1) # need to change
         checkpoint = cfg.checkpoint_activations
         if checkpoint:
             offload_to_cpu = cfg.offload_activations
@@ -249,7 +246,7 @@ class TransformerEncoderBase(FairseqEncoder):
                 x, encoder_padding_mask=encoder_padding_mask if has_pads else None
             )
             # print(attn_out.shape)
-            attn_list.append(lr)
+            attn_list.append(attn_out)
             value_list.append(value_relation)
             if isinstance(lr, tuple) and len(lr) == 2:
                 x, fc_result = lr
@@ -275,14 +272,10 @@ class TransformerEncoderBase(FairseqEncoder):
         if self.link:
             attn_tensor = self.link(attn_tensor)
             value_tensor = self.link(value_tensor)
-        # print(attn_tensor.shape)
-        if self.regressor1 and self.regressor2:
+            # print(attn_tensor.shape)
+        if self.regressor:
             if teacher_maps is not None:
-                # print(teacher_maps.shape)
-                regressed_maps1 = self.regressor1(torch.cat((teacher_maps[:,0, :, :], teacher_maps[:,1, :, :]), dim=-1))
-                regressed_maps2 = self.regressor2(torch.cat((teacher_maps[:,4, :, :], teacher_maps[:, 5, :, :]), dim=-1))
-                regressed_maps = torch.stack((regressed_maps1, regressed_maps2), dim=1)
-                # print(regressed_maps.shape)
+                regressed_maps = self.regressor(teacher_maps)
         if self.layer_norm is not None:
             
             x = self.layer_norm(x)

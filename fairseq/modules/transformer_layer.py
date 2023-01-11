@@ -447,7 +447,7 @@ class TransformerDecoderLayerBase(nn.Module):
                 )
             assert encoder_out is not None
             y = torch.cat((encoder_out, x), dim=0)
-        else:
+        else: #training
             y = x
         x, attn = self.self_attn(
             query=x,
@@ -455,7 +455,8 @@ class TransformerDecoderLayerBase(nn.Module):
             value=y,
             key_padding_mask=self_attn_padding_mask,
             incremental_state=incremental_state,
-            need_weights=False,
+            need_weights=True,
+            need_head_weights=True,
             attn_mask=self_attn_mask,
         )
         if self.c_attn is not None:
@@ -466,8 +467,8 @@ class TransformerDecoderLayerBase(nn.Module):
         if self.attn_ln is not None:
             x = self.attn_ln(x)
         if type(x) is tuple:
-            x = x[0]
-            attn = x[1]
+            x, attn = x
+        self_attn = attn
         x = self.dropout_module(x)
         x = self.residual_connection(x, residual)
         if not self.normalize_before:
@@ -502,7 +503,7 @@ class TransformerDecoderLayerBase(nn.Module):
             x = self.residual_connection(x, residual)
             if not self.normalize_before:
                 x = self.encoder_attn_layer_norm(x)
-
+            cross_attn=attn
         residual = x
         if self.normalize_before:
             x = self.final_layer_norm(x)
@@ -529,8 +530,8 @@ class TransformerDecoderLayerBase(nn.Module):
                 ]
             else:
                 self_attn_state = [saved_state["prev_key"], saved_state["prev_value"]]
-            return x, attn, self_attn_state
-        return x, attn, None
+            return x, self_attn, cross_attn, self_attn_state
+        return x, self_attn, cross_attn, None
 
     def make_generation_fast_(self, need_attn: bool = False, **kwargs):
         self.need_attn = need_attn

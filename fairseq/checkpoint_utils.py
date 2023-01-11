@@ -442,7 +442,12 @@ def load_model_ensemble_and_task(
             if "encoder.link.weight_orig" in state["model"].keys():
                 state["model"]["encoder.link.weight"] = state["model"]["encoder.link.weight_orig"]
             if "decoder.link.weight_orig" in state["model"].keys():
-                state["model"]["decoder.link.weight"] = state["model"]["decoder.link.weight_orig"]   
+                state["model"]["decoder.link.weight"] = state["model"]["decoder.link.weight_orig"]
+                
+            # del state["model"]["encoder.link.weight"]
+            # del state["model"]["encoder.link.bias"]
+            # del state["model"]["decoder.link.weight"]
+            # del state["model"]["decoder.link.bias"]
             if "fsdp_metadata" in state and num_shards > 1:
                 model_shard_state["shard_weights"].append(state["model"])
                 model_shard_state["shard_metadata"].append(state["fsdp_metadata"])

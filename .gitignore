@@ -1,6 +1,7 @@
 #custom
 *.sh
-
+*.zip
+*.pt
 # JetBrains PyCharm IDE
 .idea/
 

@@ -12,6 +12,28 @@ def transformer_small_link_8heads(args):
     args.decoder_attention_heads = getattr(args, "decoder_attention_heads", 8)
     return base_architecture(args)
 
+@register_model_architecture("transformer", "transformer_3layers_decoder")
+def transformer_3layers_decoder(args):
+    args.link = getattr(args, "link", True)
+    args.encoder_embed_dim = getattr(args, "encoder_embed_dim", 512)
+    args.encoder_ffn_embed_dim = getattr(args, "encoder_ffn_embed_dim", 1024)
+    args.encoder_layers = getattr(args, "encoder_layers", 6)
+    args.encoder_attention_heads = getattr(args, "encoder_attention_heads", 8)
+    args.decoder_layers = getattr(args, "decoder_layers", 3)
+    args.decoder_attention_heads = getattr(args, "decoder_attention_heads", 8)
+    return base_architecture(args)
+
+@register_model_architecture("transformer", "transformer_2layers_decoder")
+def transformer_2layers_decoder(args):
+    args.link = getattr(args, "link", True)
+    args.encoder_embed_dim = getattr(args, "encoder_embed_dim", 512)
+    args.encoder_ffn_embed_dim = getattr(args, "encoder_ffn_embed_dim", 1024)
+    args.encoder_layers = getattr(args, "encoder_layers", 6)
+    args.encoder_attention_heads = getattr(args, "encoder_attention_heads", 8)
+    args.decoder_layers = getattr(args, "decoder_layers", 2)
+    args.decoder_attention_heads = getattr(args, "decoder_attention_heads", 8)
+    return base_architecture(args)
+
 @register_model_architecture("transformer", "transformer_tiny_link_8heads")
 def transformer_tiny_link_8heads(args):
     args.link = getattr(args, "link", True)
@@ -21,6 +43,49 @@ def transformer_tiny_link_8heads(args):
     args.encoder_attention_heads = getattr(args, "encoder_attention_heads", 8)
     args.decoder_layers = getattr(args, "decoder_layers", 3)
     args.decoder_attention_heads = getattr(args, "decoder_attention_heads", 8)
+    return base_architecture(args)
+
+@register_model_architecture("transformer", "transformer_tiny_link_12heads")
+def transformer_tiny_link_12heads(args):
+    args.link = getattr(args, "link", True)
+    args.encoder_embed_dim = getattr(args, "encoder_embed_dim", 512)
+    args.encoder_ffn_embed_dim = getattr(args, "encoder_ffn_embed_dim", 1024)
+    args.encoder_layers = getattr(args, "encoder_layers", 3)
+    args.encoder_attention_heads = getattr(args, "encoder_attention_heads", 12)
+    args.decoder_layers = getattr(args, "decoder_layers", 3)
+    args.decoder_attention_heads = getattr(args, "decoder_attention_heads", 12)
+    return base_architecture(args)
+
+@register_model_architecture("transformer", "transformer_tiny_link_16heads")
+def transformer_tiny_link_16heads(args):
+    args.link = getattr(args, "link", True)
+    args.encoder_embed_dim = getattr(args, "encoder_embed_dim", 512)
+    args.encoder_ffn_embed_dim = getattr(args, "encoder_ffn_embed_dim", 1024)
+    args.encoder_layers = getattr(args, "encoder_layers", 3)
+    args.encoder_attention_heads = getattr(args, "encoder_attention_heads", 16)
+    args.decoder_layers = getattr(args, "decoder_layers", 3)
+    args.decoder_attention_heads = getattr(args, "decoder_attention_heads", 16)
+    return base_architecture(args)
+
+@register_model_architecture("transformer", "transformer_tiny_link_32heads")
+def transformer_tiny_link_32heads(args):
+    args.link = getattr(args, "link", True)
+    args.encoder_embed_dim = getattr(args, "encoder_embed_dim", 512)
+    args.encoder_ffn_embed_dim = getattr(args, "encoder_ffn_embed_dim", 1024)
+    args.encoder_layers = getattr(args, "encoder_layers", 3)
+    args.encoder_attention_heads = getattr(args, "encoder_attention_heads", 32)
+    args.decoder_layers = getattr(args, "decoder_layers", 3)
+    args.decoder_attention_heads = getattr(args, "decoder_attention_heads", 32)
+    return base_architecture(args)
+
+@register_model_architecture("transformer", "transformer_large")
+def transformer_large(args):
+    args.encoder_embed_dim = getattr(args, "encoder_embed_dim", 512)
+    args.encoder_ffn_embed_dim = getattr(args, "encoder_ffn_embed_dim", 1024)
+    args.encoder_layers = getattr(args, "encoder_layers", 6)
+    args.encoder_attention_heads = getattr(args, "encoder_attention_heads", 16)
+    args.decoder_layers = getattr(args, "decoder_layers", 6)
+    args.decoder_attention_heads = getattr(args, "decoder_attention_heads", 16)
     return base_architecture(args)
 
 @register_model_architecture("transformer", "transformer_small_link")

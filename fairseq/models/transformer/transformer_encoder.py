@@ -55,7 +55,7 @@ class TransformerEncoderBase(FairseqEncoder):
         if cfg.regressor:
             self.regressor = nn.Conv2d(24, cfg.encoder.attention_heads*cfg.encoder.layers, 1)
         if cfg.link:
-            self.link = nn.Conv2d(cfg.encoder.attention_heads*cfg.encoder.layers, 96, 1) # need to change
+            self.link = nn.Conv2d(48, 24, 1) # need to change
         checkpoint = cfg.checkpoint_activations
         if checkpoint:
             offload_to_cpu = cfg.offload_activations

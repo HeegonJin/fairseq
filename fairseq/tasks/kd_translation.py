@@ -31,6 +31,12 @@ class KDTranslationConfig(TranslationConfig):
     decoder_kd: int = field(
         default=1, metadata={"help": "decoder attention distillation"}
     )
+    self_kd: int = field(
+        default=1, metadata={"help": "decoder attention distillation"}
+    )
+    cross_kd: int = field(
+        default=1, metadata={"help": "decoder attention distillation"}
+    )
     value_kd: int = field(
         default=0, metadata={"help": "value relation distillation"}
     )
@@ -68,5 +74,7 @@ class KDTranslationTask(TranslationTask):
         self.regressor = cfg.regressor
         self.loss_type = cfg.loss_type
         self.decoder_kd = cfg.decoder_kd
+        self.self_kd = cfg.self_kd
+        self.cross_kd = cfg.cross_kd
         self.value_kd = cfg.value_kd
         

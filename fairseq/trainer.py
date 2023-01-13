@@ -833,7 +833,9 @@ class Trainer(object):
                                 teacher_output, 
                                 log_probs=True
                             )
-                            sample['teacher_decoder_attn_output'] = teacher_output[1]['attn_tensor']
+                            sample['teacher_decoder_self_attn_output'] = teacher_output[1]['self_attn_tensor']
+                            sample['teacher_decoder_cross_attn_output'] = teacher_output[1]['cross_attn_tensor']
+
                             sample["teacher_attn_output"] = teacher_attn_output
                             sample["teacher_value_relation"] = teacher_value_relation
                             sample['teacher_regressed_maps'] = teacher_regressed_maps

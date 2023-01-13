@@ -750,7 +750,7 @@ class MultiheadAttention(FairseqIncrementalDecoder):
             attn_weights, dim=-1, onnx_trace=self.onnx_trace
         )
         temp_attn_weights_float = utils.softmax(
-            attn_weights / 3.0 , dim=-1, onnx_trace=self.onnx_trace
+            attn_weights / 1.0 , dim=-1, onnx_trace=self.onnx_trace
         )
         attn_weights = attn_weights_float.type_as(attn_weights)
         attn_probs = self.dropout_module(attn_weights)

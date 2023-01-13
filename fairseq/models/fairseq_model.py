@@ -125,6 +125,13 @@ class BaseFairseqModel(nn.Module):
         from fairseq.checkpoint_utils import prune_state_dict
 
         new_state_dict = prune_state_dict(state_dict, model_cfg)
+        # del new_state_dict["model"]["encoder.link.weight"]
+        # del new_state_dict["model"]["encoder.link.bias"]
+        # if "decoder.self_link.weight" in new_state_dict.keys():
+        #     del new_state_dict["decoder.self_link.weight"]
+        #     del new_state_dict["decoder.self_link.bias"]
+        #     del new_state_dict["decoder.cross_link.weight"]
+        #     del new_state_dict["decoder.cross_link.bias"]
         return super().load_state_dict(new_state_dict, strict)
 
     def upgrade_state_dict(self, state_dict):

@@ -539,15 +539,15 @@ class MultiheadAttention(FairseqIncrementalDecoder):
                 )
 
             else:
-                head_dim = self.embed_dim // self.num_heads
-                in_proj_bias = torch.cat((self.q_proj.bias, self.k_proj.bias, self.v_proj.bias))
-                b_q, b_k, b_v = in_proj_bias.chunk(3)
-                q, k, v = _in_projection(query, key, value, self.q_proj.weight, self.k_proj.weight, self.v_proj.weight, b_q, b_k, b_v)
-                v = v.contiguous().view(v.shape[0], bsz * self.num_heads, head_dim).transpose(0, 1)
+                # head_dim = self.embed_dim // self.num_heads
+                # in_proj_bias = torch.cat((self.q_proj.bias, self.k_proj.bias, self.v_proj.bias))
+                # b_q, b_k, b_v = in_proj_bias.chunk(3)
+                # q, k, v = _in_projection(query, key, value, self.q_proj.weight, self.k_proj.weight, self.v_proj.weight, b_q, b_k, b_v)
+                # v = v.contiguous().view(v.shape[0], bsz * self.num_heads, head_dim).transpose(0, 1)
                 # print(v.shape)
-                v_tmp = rearrange(v, '(B C) X D -> B C X D', B=bsz, C=self.num_heads)
-                value_relation = torch.matmul(v_tmp, v_tmp.transpose(2,3))
-                value_relation = value_relation / (head_dim)**(1/2)
+                # v_tmp = rearrange(v, '(B C) X D -> B C X D', B=bsz, C=self.num_heads)
+                # value_relation = torch.matmul(v_tmp, v_tmp.transpose(2,3))
+                # value_relation = value_relation / (head_dim)**(1/2)
                 return F.multi_head_attention_forward(
                     query,
                     key,
@@ -571,7 +571,7 @@ class MultiheadAttention(FairseqIncrementalDecoder):
                     k_proj_weight=self.k_proj.weight,
                     v_proj_weight=self.v_proj.weight,
                     average_attn_weights=False
-                ), value_relation
+                ), None
 
         if incremental_state is not None:
             saved_state = self._get_input_buffer(incremental_state)
@@ -749,9 +749,9 @@ class MultiheadAttention(FairseqIncrementalDecoder):
         attn_weights_float = utils.softmax(
             attn_weights, dim=-1, onnx_trace=self.onnx_trace
         )
-        temp_attn_weights_float = utils.softmax(
-            attn_weights / 1.0 , dim=-1, onnx_trace=self.onnx_trace
-        )
+        # temp_attn_weights_float = utils.softmax(
+        #     attn_weights / 1.0 , dim=-1, onnx_trace=self.onnx_trace
+        # )
         attn_weights = attn_weights_float.type_as(attn_weights)
         attn_probs = self.dropout_module(attn_weights)
 
@@ -789,7 +789,7 @@ class MultiheadAttention(FairseqIncrementalDecoder):
         attn = self.out_proj(attn)
         attn_weights: Optional[Tensor] = None
         if need_weights:
-            attn_weights = temp_attn_weights_float.view(
+            attn_weights = attn_weights_float.view(
                 bsz, self.num_heads, tgt_len, src_len
             ).transpose(1, 0)
             if not need_head_weights:

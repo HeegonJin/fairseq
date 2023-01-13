@@ -267,8 +267,8 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
             'attn_loss' : extra['attn_loss'].data if extra.get('attn_loss', None) is not None else 0,
             'decoder_self_attn_loss': extra['decoder_self_attn_loss'].data if extra.get('decoder_self_attn_loss', None) is not None else 0,
             'decoder_cross_attn_loss': extra['decoder_cross_attn_loss'].data if extra.get('decoder_cross_attn_loss', None) is not None else 0,
-            'value_relation_loss': extra['value_relation_loss'].data if extra.get('value_relation_loss', None) is not None else 0,
-            'regression_loss': extra['regression_loss'].data if extra.get('regression_loss', None) is not None else 0
+            # 'value_relation_loss': extra['value_relation_loss'].data if extra.get('value_relation_loss', None) is not None else 0,
+            # 'regression_loss': extra['regression_loss'].data if extra.get('regression_loss', None) is not None else 0
         }
         
         if self.report_accuracy:
@@ -549,8 +549,8 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         nll_loss_teacher = sum(log.get('nll_loss_teacher', 0) for log in logging_outputs)
         kd_loss = sum(log.get('kd_loss', 0) for log in logging_outputs)
         attn_loss = sum(log.get('attn_loss', 0) for log in logging_outputs)
-        value_relation_loss = sum(log.get('value_relation_loss', 0) for log in logging_outputs)
-        regression_loss = sum(log.get('regression_loss', 0) for log in logging_outputs)
+        # value_relation_loss = sum(log.get('value_relation_loss', 0) for log in logging_outputs)
+        # regression_loss = sum(log.get('regression_loss', 0) for log in logging_outputs)
         decoder_self_attn_loss = sum(log.get('decoder_self_attn_loss', 0) for log in logging_outputs)
         decoder_cross_attn_loss = sum(log.get('decoder_cross_attn_loss', 0) for log in logging_outputs)
 
@@ -567,18 +567,18 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
             sample_size, 
             round=3
         )
-        metrics.log_scalar(
-            'value_relation_loss', 
-            value_relation_loss / sample_size / math.log(2), 
-            sample_size, 
-            round=3
-        )
-        metrics.log_scalar(
-            'regression_loss', 
-            regression_loss / sample_size / math.log(2), 
-            sample_size, 
-            round=3
-        )
+        # metrics.log_scalar(
+        #     'value_relation_loss', 
+        #     value_relation_loss / sample_size / math.log(2), 
+        #     sample_size, 
+        #     round=3
+        # )
+        # metrics.log_scalar(
+        #     'regression_loss', 
+        #     regression_loss / sample_size / math.log(2), 
+        #     sample_size, 
+        #     round=3
+        # )
         metrics.log_scalar(
             'decoder_self_attn_loss', 
             decoder_self_attn_loss / sample_size / math.log(2), 

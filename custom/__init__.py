@@ -22,7 +22,6 @@ def transformer_teacher_8heads(args):
     args.decoder_layers = getattr(args, "decoder_layers", 6)
     base_architecture(args)
     
->>>>>>> 35c77b309cee1b73d017407686b0b900d4d5663a
 @register_model_architecture("transformer", "transformer_3layers_decoder")
 def transformer_3layers_decoder(args):
     args.link = getattr(args, "link", True)

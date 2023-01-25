@@ -177,7 +177,7 @@ def main(cfg: FairseqConfig) -> None:
         # build teacher model here
         teacher_models = load_model_ensemble(
             [cfg.task.teacher_checkpoint_path],
-            task=task
+            task=task, teacher=True
         )[0][0]
 
         trainer.teacher_model = teacher_models.to(trainer.device)

@@ -13,9 +13,6 @@ import math
 import os
 import sys
 from typing import Any, Callable, Dict, List, Optional, Tuple
-import torch.nn.utils.prune as prune
-
-import torch.nn.utils.prune as prune
 
 torch.autograd.set_detect_anomaly(True)
 

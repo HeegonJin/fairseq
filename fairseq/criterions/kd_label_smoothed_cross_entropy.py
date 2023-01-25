@@ -225,7 +225,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         2) the sample size, which is used as the denominator for the gradient
         3) logging outputs to display while training
         """
-        net_output, (attn_output, value_relation, regressed_maps) = model(teacher_maps, **sample["net_input"])
+        net_output, (attn_output, value_relation, regressed_maps) = model(**sample["net_input"])
         # print(regressed_maps)
         attn_output = attn_output
         decoder_self_attn_output = net_output[1]['self_attn_tensor']

@@ -12,10 +12,11 @@ def transformer_small_link_8heads(args):
     args.decoder_attention_heads = getattr(args, "decoder_attention_heads", 8)
     return base_architecture(args)
 
-@register_model_architecture("transformer", "transformer_teacher_8heads")
-def transformer_teacher_8heads(args): 
+@register_model_architecture("transformer", "transformer_link")
+def transformer_link(args): 
+    args.link = getattr(args, "link", True)
     args.encoder_embed_dim = getattr(args, "encoder_embed_dim", 512)
-    args.encoder_ffn_embed_dim = getattr(args, "encoder_ffn_embed_dim", 1024)
+    args.encoder_ffn_embed_dim = getattr(args, "encoder_ffn_embed_dim", 2048)
     args.encoder_layers = getattr(args, "encoder_layers", 6)
     args.encoder_attention_heads = getattr(args, "encoder_attention_heads", 8)
     args.decoder_attention_heads = getattr(args, "decoder_attention_heads", 8)
@@ -186,6 +187,17 @@ def transformer_tiny_nolink(args):
     args.decoder_attention_heads = getattr(args, "decoder_attention_heads", 4)
     return base_architecture(args)
 
+@register_model_architecture("transformer", "transformer_teacher")
+def transformer_teacher(args):
+    args.encoder_embed_dim = getattr(args, "encoder_embed_dim", 512)
+    args.encoder_ffn_embed_dim = getattr(args, "encoder_ffn_embed_dim", 2048)
+    args.encoder_attention_heads = getattr(args, "encoder_attention_heads", 8)    
+    args.encoder_layers = getattr(args, "encoder_layers", 12)
+    args.encoder_normalize_before = getattr(args, "encoder_normalize_before", False)
+    args.decoder_layers = getattr(args, "decoder_layers", 12)
+    args.decoder_attention_heads = getattr(args, "decoder_attention_heads", 8)
+    base_architecture(args)
+    
 @register_model_architecture("transformer", "transformer_2x")
 def transformer_big(args):
     args.encoder_embed_dim = getattr(args, "encoder_embed_dim", 1024)

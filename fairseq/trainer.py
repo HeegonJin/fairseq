@@ -827,7 +827,7 @@ class Trainer(object):
                     # forward and backward
                     if self.perform_distillation:
                         with torch.no_grad():
-                            teacher_output, (teacher_attn_output, teacher_value_relation, teacher_regressed_maps) = self.teacher_model(None, **sample["net_input"])
+                            teacher_output, (teacher_attn_output, teacher_value_relation, teacher_regressed_maps) = self.teacher_model(**sample["net_input"])
                             sample["teacher_output"] = teacher_output
                             sample["teacher_lprobs"] = self.teacher_model.get_normalized_probs(
                                 teacher_output, 
@@ -845,7 +845,6 @@ class Trainer(object):
                             # )
 
                         # torch.nn.utils.prune.l1_unstructured(self.model.encoder.link, 'bias', amount=1.0)
-                        
                     loss, sample_size_i, logging_output = self.task.train_step(
                         sample=sample,
                         model=self.model,
@@ -853,9 +852,7 @@ class Trainer(object):
                         optimizer=self.optimizer,
                         update_num=self.get_num_updates(),
                         epoch=epoch,
-                        ignore_grad=is_dummy_batch,
-                        teacher_maps=teacher_attn_output
-                    )
+                        ignore_grad=is_dummy_batch)
                         
                     del loss
 
@@ -1146,7 +1143,7 @@ class Trainer(object):
             sample, is_dummy_batch = self._prepare_sample(sample)
 
             if self.perform_distillation:
-                teacher_output, teacher_attn_output = self.teacher_model(None, **sample["net_input"])
+                teacher_output, teacher_attn_output = self.teacher_model(**sample["net_input"])
                 sample["teacher_output"] = teacher_output
                 sample["teacher_lprobs"] = self.teacher_model.get_normalized_probs(
                     teacher_output, 

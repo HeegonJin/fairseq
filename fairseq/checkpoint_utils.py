@@ -353,6 +353,7 @@ def load_model_ensemble(
     suffix="",
     num_shards=1,
     state=None,
+    teacher=False
 ):
     """Loads an ensemble of models.
 
@@ -373,6 +374,7 @@ def load_model_ensemble(
         suffix,
         num_shards,
         state,
+        teacher
     )
     return ensemble, args
 
@@ -400,6 +402,7 @@ def load_model_ensemble_and_task(
     suffix="",
     num_shards=1,
     state=None,
+    teacher=False
 ):
     assert state is None or len(filenames) == 1
 
@@ -465,7 +468,7 @@ def load_model_ensemble_and_task(
                         shard_weights=model_shard_state["shard_weights"],
                         shard_metadata=model_shard_state["shard_metadata"],
                     )
-                    model = task.build_model(cfg.model)
+                    model = task.build_model(cfg.model, teacher=teacher)
                     if (
                         "optimizer_history" in state
                         and len(state["optimizer_history"]) > 0
@@ -483,9 +486,9 @@ def load_model_ensemble_and_task(
 
                 argspec = inspect.getfullargspec(task.build_model)
                 if "from_checkpoint" in argspec.args:
-                    model = task.build_model(cfg.model, from_checkpoint=True)
+                    model = task.build_model(cfg.model, from_checkpoint=True, teacher=teacher)
                 else:
-                    model = task.build_model(cfg.model)
+                    model = task.build_model(cfg.model, teacher=teacher)
                 if (
                     "optimizer_history" in state
                     and len(state["optimizer_history"]) > 0

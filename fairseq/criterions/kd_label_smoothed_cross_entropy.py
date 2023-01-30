@@ -267,6 +267,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
             'attn_loss' : extra['attn_loss'].data if extra.get('attn_loss', None) is not None else 0,
             'decoder_self_attn_loss': extra['decoder_self_attn_loss'].data if extra.get('decoder_self_attn_loss', None) is not None else 0,
             'decoder_cross_attn_loss': extra['decoder_cross_attn_loss'].data if extra.get('decoder_cross_attn_loss', None) is not None else 0,
+            'rep_loss': extra['rep_loss'].data if extra.get('rep_loss', None) is not None else 0,
             # 'value_relation_loss': extra['value_relation_loss'].data if extra.get('value_relation_loss', None) is not None else 0,
             # 'regression_loss': extra['regression_loss'].data if extra.get('regression_loss', None) is not None else 0
         }
@@ -435,7 +436,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         attn_loss = None
         decoder_self_attn_loss = None
         decoder_cross_attn_loss = None
-
+        rep_loss = None
         value_relation_loss = None
         regression_loss= None
         if epoch:
@@ -455,6 +456,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
                                 decoder_self_attn_loss = F.mse_loss(decoder_self_attn, teacher_decoder_self_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
                             elif self.cross_kd:
                                 decoder_cross_attn_loss = F.mse_loss(decoder_cross_attn, teacher_decoder_cross_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
+                                
                     elif self.loss_type == 'regression':
                         regression_loss = F.mse_loss((attn), regressed_maps, reduction='mean') * self.rambda * (self.decay ** (epoch-1)) /50
                         if self.value_kd:
@@ -462,6 +464,40 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
                             value_relation_loss = F.kl_div(F.log_softmax(rearrange(teacher_value_relation, 'B C H W -> B C (H W)'), dim=-1), F.log_softmax(rearrange(value_relation, 'B C H W -> B C (H W)'), dim=-1), reduction='batchmean', log_target=True) * self.rambda * (self.decay ** (epoch-1)) / (x * 4)
                         if self.decoder_kd:
                             decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
+                            
+                    elif self.loss_type =='kld_uncertainty':
+                        
+                        attn_loss =F.kl_div(F.log_softmax(rearrange(attn, 'B C H W -> B C (H W)'), dim=-1), F.log_softmax(rearrange(teacher_attn, 'B C H W -> B C (H W)'), dim=-1), reduction='sum', log_target=True) * (self.decay ** (epoch-1)) * self.rambda
+                        if self.decoder_kd:
+                            if self.self_kd and self.cross_kd:
+                                decoder_self_attn_loss = F.kl_div(F.log_softmax(rearrange(decoder_self_attn, 'B C H W -> B C (H W)'), dim=-1), F.log_softmax(rearrange(teacher_decoder_self_attn, 'B C H W -> B C (H W)'), dim=-1), reduction='sum', log_target=True) * (self.decay ** (epoch-1)) / 2 * self.rambda
+                                decoder_cross_attn_loss = F.kl_div(F.log_softmax(rearrange(decoder_cross_attn, 'B C H W -> B C (H W)'), dim=-1), F.log_softmax(rearrange(teacher_decoder_cross_attn, 'B C H W -> B C (H W)'), dim=-1), reduction='sum', log_target=True) * (self.decay ** (epoch-1)) / 2 * self.rambda
+                            elif self.self_kd:
+                                decoder_self_attn_loss = F.kl_div(F.log_softmax(rearrange(decoder_self_attn, 'B C H W -> B C (H W)'), dim=-1), F.log_softmax(rearrange(teacher_decoder_self_attn, 'B C H W -> B C (H W)'), dim=-1), reduction='sum', log_target=True) * (self.decay ** (epoch-1)) * self.rambda
+                            elif self.cross_kd:
+                                decoder_cross_attn_loss = F.kl_div(F.log_softmax(rearrange(decoder_cross_attn, 'B C H W -> B C (H W)'), dim=-1), F.log_softmax(rearrange(teacher_decoder_cross_attn, 'B C H W -> B C (H W)'), dim=-1), reduction='sum', log_target=True) * (self.decay ** (epoch-1)) * self.rambda
+                        rep_loss = (attn_loss + decoder_self_attn_loss + decoder_cross_attn_loss).sum()
+                        extra['attn_loss'] = attn_loss.sum()
+                        extra['decoder_self_attn_loss'] = decoder_self_attn_loss.sum()
+                        extra['decoder_cross_attn_loss'] = decoder_cross_attn_loss.sum()
+
+                        probs = torch.exp(lprobs)
+                        # probs = F.softmax(student_logits, dim=-1)
+                        # print(probs.shape)
+                        entropy = torch.sum(probs * lprobs, dim=1)  # bsz
+                        avg_prob = 1 / probs.shape[-1] * torch.ones((1, probs.shape[-1]))                      
+                        # normalize the entropy to  0 to 1
+                        weight = entropy / torch.sum(avg_prob * torch.log(avg_prob))  # bsz
+                        weight_mean = torch.mean(weight, dim=0)
+                        # print(weight)
+                        loss = ((1.0 - self.alpha) * golden_loss).sum()
+                        rep_loss = weight_mean * rep_loss * 2
+                        kd_loss =  (1 - weight_mean) * self.alpha * kd_loss.sum() * 2
+                        extra['rep_loss'] = rep_loss
+                        extra['kd_loss'] = kd_loss
+                        loss += rep_loss + kd_loss
+                        return loss, extra
+
                     elif self.loss_type == 'kld':
                         attn_loss =F.kl_div(F.log_softmax(rearrange(attn, 'B C H W -> B C (H W)'), dim=-1), F.log_softmax(rearrange(teacher_attn, 'B C H W -> B C (H W)'), dim=-1), reduction='sum', log_target=True) * (self.decay ** (epoch-1)) * self.rambda
                         if self.decoder_kd:
@@ -559,7 +595,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         # regression_loss = sum(log.get('regression_loss', 0) for log in logging_outputs)
         decoder_self_attn_loss = sum(log.get('decoder_self_attn_loss', 0) for log in logging_outputs)
         decoder_cross_attn_loss = sum(log.get('decoder_cross_attn_loss', 0) for log in logging_outputs)
-
+        rep_loss = sum(log.get('rep_loss', 0) for log in logging_outputs)
         # log metrics
         metrics.log_scalar(
             'loss', 
@@ -573,12 +609,12 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
             sample_size, 
             round=3
         )
-        # metrics.log_scalar(
-        #     'value_relation_loss', 
-        #     value_relation_loss / sample_size / math.log(2), 
-        #     sample_size, 
-        #     round=3
-        # )
+        metrics.log_scalar(
+            'rep_loss', 
+            rep_loss / sample_size / math.log(2), 
+            sample_size, 
+            round=3
+        )
         # metrics.log_scalar(
         #     'regression_loss', 
         #     regression_loss / sample_size / math.log(2), 

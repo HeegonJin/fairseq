@@ -268,6 +268,8 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
             'decoder_self_attn_loss': extra['decoder_self_attn_loss'].data if extra.get('decoder_self_attn_loss', None) is not None else 0,
             'decoder_cross_attn_loss': extra['decoder_cross_attn_loss'].data if extra.get('decoder_cross_attn_loss', None) is not None else 0,
             'rep_loss': extra['rep_loss'].data if extra.get('rep_loss', None) is not None else 0,
+            'golden_loss': extra['golden_loss'].data if extra.get('golden_loss', None) is not None else 0,
+            'weight': extra['weight'].data if extra.get('weight', None) is not None else 0,
             # 'value_relation_loss': extra['value_relation_loss'].data if extra.get('value_relation_loss', None) is not None else 0,
             # 'regression_loss': extra['regression_loss'].data if extra.get('regression_loss', None) is not None else 0
         }
@@ -331,6 +333,7 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         nll_loss = nll_loss.view(-1)
         nll_loss_teacher = nll_loss_teacher.view(-1)
         golden_loss = golden_loss.view(-1)
+        extra['golden_loss'] = golden_loss.sum()
 
         if teacher_output is None:
             loss = golden_loss
@@ -482,17 +485,15 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
                         extra['decoder_cross_attn_loss'] = decoder_cross_attn_loss.sum()
 
                         probs = torch.exp(lprobs)
-                        # probs = F.softmax(student_logits, dim=-1)
-                        # print(probs.shape)
                         entropy = torch.sum(probs * lprobs, dim=1)  # bsz
-                        avg_prob = 1 / probs.shape[-1] * torch.ones((1, probs.shape[-1]))                      
-                        # normalize the entropy to  0 to 1
+                        avg_prob = 1 / probs.shape[-1] * torch.ones((1, probs.shape[-1]))                
                         weight = entropy / torch.sum(avg_prob * torch.log(avg_prob))  # bsz
                         weight_mean = torch.mean(weight, dim=0)
-                        # print(weight)
+                        
                         loss = ((1.0 - self.alpha) * golden_loss).sum()
                         rep_loss = weight_mean * rep_loss * 2
                         kd_loss =  (1 - weight_mean) * self.alpha * kd_loss.sum() * 2
+                        extra['weight'] = weight_mean
                         extra['rep_loss'] = rep_loss
                         extra['kd_loss'] = kd_loss
                         loss += rep_loss + kd_loss
@@ -596,6 +597,8 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
         decoder_self_attn_loss = sum(log.get('decoder_self_attn_loss', 0) for log in logging_outputs)
         decoder_cross_attn_loss = sum(log.get('decoder_cross_attn_loss', 0) for log in logging_outputs)
         rep_loss = sum(log.get('rep_loss', 0) for log in logging_outputs)
+        golden_loss = sum(log.get('golden_loss', 0) for log in logging_outputs)
+        weight = sum(log.get('weight', 0) for log in logging_outputs)
         # log metrics
         metrics.log_scalar(
             'loss', 
@@ -615,12 +618,12 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
             sample_size, 
             round=3
         )
-        # metrics.log_scalar(
-        #     'regression_loss', 
-        #     regression_loss / sample_size / math.log(2), 
-        #     sample_size, 
-        #     round=3
-        # )
+        metrics.log_scalar(
+            'golden_loss', 
+            golden_loss / sample_size / math.log(2), 
+            sample_size, 
+            round=3
+        )
         metrics.log_scalar(
             'decoder_self_attn_loss', 
             decoder_self_attn_loss / sample_size / math.log(2), 
@@ -648,6 +651,10 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
             kd_loss / ntokens / math.log(2), 
             ntokens, 
             round=3)
+        metrics.log_scalar(
+            'weight', 
+            weight / 16,
+        round=3)
         metrics.log_derived(
             'ppl', 
             lambda meters: utils.get_perplexity(meters['nll_loss'].avg))

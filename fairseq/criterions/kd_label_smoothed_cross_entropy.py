@@ -456,7 +456,41 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
                                 decoder_self_attn_loss = F.mse_loss(decoder_self_attn, teacher_decoder_self_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
                             elif self.cross_kd:
                                 decoder_cross_attn_loss = F.mse_loss(decoder_cross_attn, teacher_decoder_cross_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
+                        
+                    elif self.loss_type == 'mse_uncertainty':
+                        attn_loss = F.mse_loss((attn), teacher_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
+                        if self.value_kd:
+                            x = value_relation.shape[2]
+                            value_relation_loss = F.kl_div(F.log_softmax(rearrange(teacher_value_relation, 'B C H W -> B C (H W)'), dim=-1), F.log_softmax(rearrange(value_relation, 'B C H W -> B C (H W)'), dim=-1), reduction='batchmean', log_target=True) * self.rambda * (self.decay ** (epoch-1)) / (x * 4)
+                        if self.decoder_kd:
+                            if self.self_kd and self.cross_kd:
+                                decoder_self_attn_loss = F.mse_loss(decoder_self_attn, teacher_decoder_self_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1)) / 2
+                                decoder_cross_attn_loss = F.mse_loss(decoder_cross_attn, teacher_decoder_cross_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1)) / 2
                                 
+                            elif self.self_kd:
+                                decoder_self_attn_loss = F.mse_loss(decoder_self_attn, teacher_decoder_self_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
+                            elif self.cross_kd:
+                                decoder_cross_attn_loss = F.mse_loss(decoder_cross_attn, teacher_decoder_cross_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
+                        rep_loss = (attn_loss + decoder_self_attn_loss + decoder_cross_attn_loss).sum()
+                        extra['attn_loss'] = attn_loss.sum()
+                        extra['decoder_self_attn_loss'] = decoder_self_attn_loss.sum()
+                        extra['decoder_cross_attn_loss'] = decoder_cross_attn_loss.sum()
+                        loss = ((1.0 - self.alpha) * golden_loss).sum()
+
+                        probs = torch.exp(lprobs)
+                        entropy = torch.sum(probs * lprobs, dim=1)  # bsz
+                        avg_prob = 1 / probs.shape[-1] * torch.ones((1, probs.shape[-1]))                      
+                        # normalize the entropy to  0 to 1
+                        weight = entropy / torch.sum(avg_prob * torch.log(avg_prob))  # bsz
+                        weight_mean = torch.mean(weight, dim=0) # scalar
+                        
+                        rep_loss = weight_mean * rep_loss
+                        kd_loss =  (1 - weight_mean) * self.alpha * kd_loss.sum()
+                        extra['rep_loss'] = rep_loss
+                        extra['kd_loss'] = kd_loss
+                        loss += rep_loss + kd_loss
+                        return loss, extra
+                    
                     elif self.loss_type == 'regression':
                         regression_loss = F.mse_loss((attn), regressed_maps, reduction='mean') * self.rambda * (self.decay ** (epoch-1)) /50
                         if self.value_kd:
@@ -466,7 +500,8 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
                             decoder_attn_loss = F.mse_loss(decoder_attn, teacher_decoder_attn, reduction='mean') * self.rambda * (self.decay ** (epoch-1))
                             
                     elif self.loss_type =='kld_uncertainty':
-                        
+                        loss = ((1.0 - self.alpha) * golden_loss).sum()
+
                         attn_loss =F.kl_div(F.log_softmax(rearrange(attn, 'B C H W -> B C (H W)'), dim=-1), F.log_softmax(rearrange(teacher_attn, 'B C H W -> B C (H W)'), dim=-1), reduction='sum', log_target=True) * (self.decay ** (epoch-1)) * self.rambda
                         if self.decoder_kd:
                             if self.self_kd and self.cross_kd:
@@ -476,23 +511,19 @@ class KDLabelSmoothedCrossEntropyCriterion(FairseqCriterion):
                                 decoder_self_attn_loss = F.kl_div(F.log_softmax(rearrange(decoder_self_attn, 'B C H W -> B C (H W)'), dim=-1), F.log_softmax(rearrange(teacher_decoder_self_attn, 'B C H W -> B C (H W)'), dim=-1), reduction='sum', log_target=True) * (self.decay ** (epoch-1)) * self.rambda
                             elif self.cross_kd:
                                 decoder_cross_attn_loss = F.kl_div(F.log_softmax(rearrange(decoder_cross_attn, 'B C H W -> B C (H W)'), dim=-1), F.log_softmax(rearrange(teacher_decoder_cross_attn, 'B C H W -> B C (H W)'), dim=-1), reduction='sum', log_target=True) * (self.decay ** (epoch-1)) * self.rambda
-                        rep_loss = (attn_loss + decoder_self_attn_loss + decoder_cross_attn_loss).sum()
+                        rep_loss = attn_loss + decoder_self_attn_loss + decoder_cross_attn_loss
                         extra['attn_loss'] = attn_loss.sum()
                         extra['decoder_self_attn_loss'] = decoder_self_attn_loss.sum()
                         extra['decoder_cross_attn_loss'] = decoder_cross_attn_loss.sum()
 
                         probs = torch.exp(lprobs)
-                        # probs = F.softmax(student_logits, dim=-1)
-                        # print(probs.shape)
-                        entropy = torch.sum(probs * lprobs, dim=1)  # bsz
-                        avg_prob = 1 / probs.shape[-1] * torch.ones((1, probs.shape[-1]))                      
-                        # normalize the entropy to  0 to 1
-                        weight = entropy / torch.sum(avg_prob * torch.log(avg_prob))  # bsz
+                        entropy = -torch.sum(probs * lprobs, dim=1)  # bsz
+                        weight = entropy / torch.log(torch.tensor(probs.shape[-1]))
                         weight_mean = torch.mean(weight, dim=0)
-                        # print(weight)
-                        loss = ((1.0 - self.alpha) * golden_loss).sum()
-                        rep_loss = weight_mean * rep_loss * 2
-                        kd_loss =  (1 - weight_mean) * self.alpha * kd_loss.sum() * 2
+                        
+                        rep_loss = weight_mean * rep_loss.sum()
+                        kd_loss =  (1 - weight_mean) * self.alpha * kd_loss.sum()
+                        
                         extra['rep_loss'] = rep_loss
                         extra['kd_loss'] = kd_loss
                         loss += rep_loss + kd_loss
